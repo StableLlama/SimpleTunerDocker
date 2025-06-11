@@ -38,14 +38,14 @@ jobs:
 
       - name: Create build cache directory with more space
         run: |
-          ls -l /var/lib/docker
+          sudo ls -l /var/lib/docker
           sudo mkdir -p /mnt/buildx-cache
           sudo chmod 777 /mnt/buildx-cache
           sudo mv /var/lib/docker /mnt/buildx-cache
           sudo rm -rf /var/lib/docker
           sudo ln /mnt/buildx-cache /var/lib/docker
           df -h /mnt
-          ls -l /var/lib/docker
+          sudo ls -l /var/lib/docker
 
       - name: Login to Docker Hub
         uses: docker/login-action@v2
