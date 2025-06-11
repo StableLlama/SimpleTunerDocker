@@ -57,9 +57,9 @@ RUN python3 -m pip install pip --upgrade \
 
 # ----- new RUN for new layer to keep the above stable and frozen -----
 
-RUN --mount=type=secret,id=HF_TOKEN,env=HF_TOKEN \
-    huggingface-cli login --token $HF_TOKEN \
- && HF_HUB_ENABLE_HF_TRANSFER=1 huggingface-cli download black-forest-labs/FLUX.1-dev --local-dir /app/FLUX.1-dev
+#RUN --mount=type=secret,id=HF_TOKEN,env=HF_TOKEN \
+#    huggingface-cli login --token $HF_TOKEN \
+# && HF_HUB_ENABLE_HF_TRANSFER=1 huggingface-cli download black-forest-labs/FLUX.1-dev --local-dir /app/FLUX.1-dev
 # && HF_HUB_ENABLE_HF_TRANSFER=1 huggingface-cli download stablellama/TEST --local-dir /app/FLUX.1-dev
 
 # ----- new RUN for new layer to keep the above stable and frozen -----
