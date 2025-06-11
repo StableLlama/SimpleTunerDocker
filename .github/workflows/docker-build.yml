@@ -34,7 +34,7 @@ jobs:
           driver-opts: |
             image=moby/buildkit:latest
             network=host
-            --volume /path/on/large/drive/buildx-storage:/var/lib/buildkit
+        #  volume: "/mnt/buildx-cache:/var/lib/buildkit"
         #  buildkitd-flags: --debug
 
       - name: Create build cache directory with more space
