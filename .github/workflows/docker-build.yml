@@ -39,12 +39,19 @@ jobs:
       - name: Create build cache directory with more space
         run: |
           sudo ls -l /var/lib/docker
+          sudo ls -l /etc/docker*
+          echo ""
           sudo mkdir -p /mnt/buildx-cache
           sudo chmod 777 /mnt/buildx-cache
-          sudo mv /var/lib/docker /mnt/buildx-cache
-          sudo rm -rf /var/lib/docker
-          sudo ln /mnt/buildx-cache /var/lib/docker
+          sudo systemctl stop docker.service
+          sudo systemctl stop docker.socket
+          sudo rsync -a /var/lib/docker/ /mnt/buildx-cache/
+          sudo echo '{"data-root": "/new/path/for/docker"}' > /etc/docker/daemon.json
+          sudo systemctl daemon-reload
+          sudo systemctl restart docker
+          echo ""
           df -h /mnt
+          echo ""
           sudo ls -l /var/lib/docker
 
       - name: Login to Docker Hub
