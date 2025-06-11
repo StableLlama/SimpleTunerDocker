@@ -41,7 +41,9 @@ jobs:
         run: |
           sudo ls -l /var/lib/docker
           echo "----"
-          sudo ls -l /var/lib/docker/*
+          sudo ls -l /var/lib/docker/buildkit
+          sudo ls -l /var/lib/docker/containers
+          sudo ls -l /var/lib/docker/image
           #sudo ls -l /var/lib/docker/
           #sudo ls -l /etc/docker*
           #echo ""
