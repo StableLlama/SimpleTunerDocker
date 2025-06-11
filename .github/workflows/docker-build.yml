@@ -58,7 +58,8 @@ jobs:
             ${{ secrets.DOCKER_USERNAME }}/simpletuner:cuda12.4.1
             ${{ secrets.DOCKER_USERNAME }}/simpletuner:latest
           cache-from: type=local,src=/mnt/buildx-cache
-          cache-to: type=local,dest=/mnt/buildx-cache-new,mode=max
+          #cache-to: type=local,dest=/mnt/buildx-cache-new,mode=max
+          cache-to: type=local,dest=/mnt/buildx-cache,mode=max
           outputs: type=registry,name=${{ secrets.DOCKER_USERNAME }}/simpletuner
 
       # - name: Build and push CUDA 12.8.1 image
