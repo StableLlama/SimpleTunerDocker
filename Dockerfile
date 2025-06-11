@@ -52,7 +52,8 @@ RUN python3 -m pip install pip --upgrade \
  && pip3 install \
       "huggingface_hub[cli,hf_transfer]" \
       wandb  \
-      poetry
+      poetry \
+ && pip3 cache purge
 
 # ----- new RUN for new layer to keep the above stable and frozen -----
 
