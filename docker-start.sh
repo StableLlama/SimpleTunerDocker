@@ -1,11 +1,21 @@
 #!/bin/bash
 
+# useful information
+# see also: https://github.com/bghira/SimpleTuner/blob/main/OPTIONS.md#environment-configuration-variables
+echo "export GPU_COUNT=$(nvidia-smi --list-gpus | wc -l)" >/etc/rp_environment
+echo "export DISABLE_UPDATES=true" >>/etc/rp_environment
+echo "export TRAINING_NUM_PROCESSES=${GPU_COUNT}" >>/etc/rp_environment
+echo "export TRAINING_NUM_MACHINES=1" >>/etc/rp_environment
+echo "export MIXED_PRECISION=bf16" >>/etc/rp_environment
+# for substantial speed improvements on NVIDIA hardware
+echo "export TRAINING_DYNAMO_BACKEND=inductor" >>/etc/rp_environment
+
 # Export useful ENV variables, including all Runpod specific vars, to /etc/rp_environment
 # This file can then later be sourced in a login shell
 echo "Exporting environment variables..."
 printenv |
   grep -E '^RUNPOD_|^PATH=|^HF_HOME=|^HF_TOKEN=|^HUGGING_FACE_HUB_TOKEN=|^WANDB_API_KEY=|^WANDB_TOKEN=|^_=' |
-  sed 's/^\(.*\)=\(.*\)$/export \1="\2"/' >/etc/rp_environment
+  sed 's/^\(.*\)=\(.*\)$/export \1="\2"/' >>/etc/rp_environment
 
 # Vast.ai uses $SSH_PUBLIC_KEY
 if [[ $SSH_PUBLIC_KEY ]]; then

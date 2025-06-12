@@ -36,6 +36,7 @@ RUN apt-get update -y \
       unzip \
       htop \
       inotify-tools \
+      nvidia-cuda-toolkit \
       libgl1-mesa-glx \
       libglib2.0-0 \
       ffmpeg \
@@ -70,8 +71,11 @@ RUN python3 -m pip install pip --upgrade \
 RUN git clone https://github.com/bghira/SimpleTuner --branch main \
  && cd SimpleTuner \
  && python3 -m venv .venv \
+ && source .venv/bin/activate \
+ && pip3 install optimum-quanto \
+ && poetry config virtualenvs.create false \
  && poetry install --no-root --with jxl \
- && chmod +x SimpleTuner/train.sh \
+ && chmod +x train.sh \
  && touch /etc/rp_environment \
  && echo 'source /etc/rp_environment' >> ~/.bashrc
 
