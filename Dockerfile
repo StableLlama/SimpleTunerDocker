@@ -75,6 +75,7 @@ RUN git clone https://github.com/bghira/SimpleTuner --branch main \
  && export FORCE_CUDA=1 \
  && poetry config virtualenvs.create false \
  && poetry install --no-root --with jxl \
+ && poetry cache clear --all pypi \
  && chmod +x train.sh \
  && touch /etc/rp_environment \
  && echo 'source /etc/rp_environment' >> ~/.bashrc
