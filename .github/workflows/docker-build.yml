@@ -11,19 +11,19 @@ jobs:
   build:
     runs-on: ubuntu-latest
     steps:
-#      - name: Free up disk space
-#        run: |
-#          echo "Removing unnecessary directories to free up space..."
-#          echo ""
-#          echo "Pre:"
-#          df -h
-#          sudo rm -rf /usr/share/dotnet
-#          sudo rm -rf /usr/local/lib/android
-#          sudo rm -rf /opt/ghc
-#          sudo rm -rf /opt/hostedtoolcache/CodeQL
-#          echo ""
-#          echo "Post:"
-#          df -h
+      - name: Free up disk space
+        run: |
+          echo "Removing unnecessary directories to free up space..."
+          echo ""
+          echo "Pre:"
+          df -h
+          sudo rm -rf /usr/share/dotnet
+          sudo rm -rf /usr/local/lib/android
+          sudo rm -rf /opt/ghc
+          sudo rm -rf /opt/hostedtoolcache/CodeQL
+          echo ""
+          echo "Post:"
+          df -h
 
       - name: Checkout code
         uses: actions/checkout@v3
