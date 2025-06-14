@@ -45,6 +45,7 @@ RUN apt-get update -y \
       python3 \
       python3-pip \
       python3.10-venv \
+      python3.10-dev \
   && rm -rf /var/lib/apt/lists/*
 
 # ----- new RUN for new layer to keep the above stable and frozen -----
@@ -71,8 +72,7 @@ RUN python3 -m pip install pip --upgrade \
 RUN git clone https://github.com/bghira/SimpleTuner --branch main \
  && cd SimpleTuner \
  && python3 -m venv .venv \
- && source .venv/bin/activate \
- && pip3 install optimum-quanto \
+ && export FORCE_CUDA=1 \
  && poetry config virtualenvs.create false \
  && poetry install --no-root --with jxl \
  && chmod +x train.sh \

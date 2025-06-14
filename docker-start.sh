@@ -4,7 +4,7 @@
 # see also: https://github.com/bghira/SimpleTuner/blob/main/OPTIONS.md#environment-configuration-variables
 echo "export GPU_COUNT=$(nvidia-smi --list-gpus | wc -l)" >/etc/rp_environment
 echo "export DISABLE_UPDATES=true" >>/etc/rp_environment
-echo "export TRAINING_NUM_PROCESSES=${GPU_COUNT}" >>/etc/rp_environment
+echo "export TRAINING_NUM_PROCESSES=$(nvidia-smi --list-gpus | wc -l)" >>/etc/rp_environment
 echo "export TRAINING_NUM_MACHINES=1" >>/etc/rp_environment
 echo "export MIXED_PRECISION=bf16" >>/etc/rp_environment
 # for substantial speed improvements on NVIDIA hardware
