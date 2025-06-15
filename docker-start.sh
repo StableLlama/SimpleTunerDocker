@@ -33,6 +33,18 @@ fi
 # Start SSH server
 service ssh start
 
+# make /workspace available as SimpleTuner/config/workspace
+if [ -z "$(find /workspace -mindepth 1 -maxdepth 1 -not -type d)" ] && [ -n "$(ls -A /workspace)" ]; then
+  # /workspace contains only directories, link them individually
+  for dir in /workspace/*/; do
+    ln -s "$dir" "/app/SimpleTuner/config/$(basename "$dir")"
+  done
+else
+  # /workspace is empty or contains files, link the whole directory
+  ln -s /workspace /app/SimpleTuner/config/workspace
+  echo "export ENV=workspace" >>/etc/rp_environment
+fi
+
 # Login to HF
 if [[ -n "${HF_TOKEN:-$HUGGING_FACE_HUB_TOKEN}" ]]; then
   huggingface-cli login --token "${HF_TOKEN:-$HUGGING_FACE_HUB_TOKEN}" --add-to-git-credential
