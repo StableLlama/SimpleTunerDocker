@@ -59,6 +59,7 @@ RUN python3 -m pip install pip --upgrade \
 
 # ----- new RUN for new layer to keep the above stable and frozen -----
 
+# NOTE: Disabled, as it's currently too big to build on GitHub
 #RUN --mount=type=secret,id=HF_TOKEN,env=HF_TOKEN \
 #    huggingface-cli login --token $HF_TOKEN \
 # && HF_HUB_ENABLE_HF_TRANSFER=1 huggingface-cli download black-forest-labs/FLUX.1-dev --local-dir /app/FLUX.1-dev
@@ -69,7 +70,8 @@ RUN python3 -m pip install pip --upgrade \
 # Clone and install SimpleTuner
 # decide for branch "release" or "main" (possibly unstable)
 #RUN git clone https://github.com/bghira/SimpleTuner --branch release
-RUN git clone https://github.com/bghira/SimpleTuner --branch main \
+RUN git config --global credential.helper cache \
+ && git clone https://github.com/bghira/SimpleTuner --branch main \
  && cd SimpleTuner \
  && python3 -m venv .venv \
  && export FORCE_CUDA=1 \
@@ -81,7 +83,7 @@ RUN git clone https://github.com/bghira/SimpleTuner --branch main \
  && echo 'source /etc/rp_environment' >> ~/.bashrc
 
 # Copy start script with exec permissions
-COPY --chmod=755 docker-start.sh /start.sh
+COPY --chmod=755 start.sh /start.sh
 
 # Ensure SSH access. Not needed for Runpod but is required on Vast and other Docker hosts
 EXPOSE 22/tcp
