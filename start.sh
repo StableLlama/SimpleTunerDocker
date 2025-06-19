@@ -33,37 +33,9 @@ fi
 # Start SSH server
 service ssh start
 
-# Setup /workspace links for SimpleTuner configuration
-excluded_dirs=("huggingface" "cache" "output")
-non_excluded_found=false
-has_files=$(find /workspace -mindepth 1 -maxdepth 1 -not -type d -print -quit 2>/dev/null)
-
-# First check if we have any non-excluded directories to link
-for dir in /workspace/*/; do
-  [ -d "$dir" ] || continue
-  dir_name=$(basename "$dir")
-  # Check if directory is in the excluded list
-  if ! printf '%s\0' "${excluded_dirs[@]}" | grep -qFxz "$dir_name"; then
-    non_excluded_found=true
-    break
-  fi
-done
-
-# Link directories or whole workspace based on conditions
-if [ -z "$has_files" ] && [ "$non_excluded_found" = true ]; then
-  # Link individual non-excluded directories
-  for dir in /workspace/*/; do
-    [ -d "$dir" ] || continue
-    dir_name=$(basename "$dir")
-    if ! printf '%s\0' "${excluded_dirs[@]}" | grep -qFxz "$dir_name"; then
-      ln -sf "$dir" "/app/SimpleTuner/config/$dir_name"
-    fi
-  done
-else
-  # Link whole workspace if it has files or only excluded directories
-  ln -sf /workspace /app/SimpleTuner/config/workspace
-  echo "export ENV=workspace" >>/etc/rp_environment
-fi
+# Setup /workspace/traindata/... as default config for SimpleTuner configuration
+ln -sf /workspace/traindata /app/SimpleTuner/config/traindata
+echo "export ENV=traindata" >>/etc/rp_environment
 
 # Login to HF
 if [[ -n "${HF_TOKEN:-$HUGGING_FACE_HUB_TOKEN}" ]]; then
