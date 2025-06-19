@@ -33,9 +33,9 @@ fi
 # Start SSH server
 service ssh start
 
-# Setup /workspace/traindata/... as default config for SimpleTuner configuration
-ln -sf /workspace/traindata /app/SimpleTuner/config/traindata
-echo "export ENV=traindata" >>/etc/rp_environment
+# Setup /workspace/trainconfig/... as default config for SimpleTuner configuration
+ln -sf /workspace/trainconfig /app/SimpleTuner/config/trainconfig
+echo "export ENV=trainconfig" >>/etc/rp_environment
 
 # Login to HF
 if [[ -n "${HF_TOKEN:-$HUGGING_FACE_HUB_TOKEN}" ]]; then
