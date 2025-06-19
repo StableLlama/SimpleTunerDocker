@@ -46,16 +46,17 @@ RUN apt-get update -y \
       python3-pip \
       python3.10-venv \
       python3.10-dev \
+  && curl https://rclone.org/install.sh | bash \
   && rm -rf /var/lib/apt/lists/*
 
 # ----- new RUN for new layer to keep the above stable and frozen -----
 
-RUN python3 -m pip install pip --upgrade \
+RUN (PIP_ROOT_USER_ACTION=ignore; python3 -m pip install pip --upgrade \
  && pip3 install \
       "huggingface_hub[cli,hf_transfer]" \
       wandb  \
       poetry \
- && pip3 cache purge
+ && pip3 cache purge)
 
 # ----- new RUN for new layer to keep the above stable and frozen -----
 
