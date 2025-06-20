@@ -39,8 +39,6 @@ echo "export ENV=trainconfig" >>/etc/rp_environment
 
 # Login to HF
 if [[ -n "${HF_TOKEN:-$HUGGING_FACE_HUB_TOKEN}" ]]; then
-  echo "export HF_TOKEN_PATH=/root/.cache/huggingface/" >>/etc/rp_environment
-  HF_TOKEN_PATH=/root/.cache/huggingface/
   huggingface-cli login --token "${HF_TOKEN:-$HUGGING_FACE_HUB_TOKEN}" --add-to-git-credential
 else
   echo "HF_TOKEN or HUGGING_FACE_HUB_TOKEN not set; skipping login"
