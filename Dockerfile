@@ -79,6 +79,7 @@ RUN git config --global credential.helper cache \
  && python3 -m venv .venv \
  && export FORCE_CUDA=1 \
  && poetry config virtualenvs.create false \
+ && poetry lock \
  && poetry install --no-root --with jxl \
  && source .venv/bin/activate \
  && pip3 install https://github.com/Dao-AILab/flash-attention/releases/download/v2.8.0.post2/flash_attn-2.8.0.post2+cu12torch2.7cxx11abiFALSE-cp310-cp310-linux_x86_64.whl \
