@@ -70,18 +70,32 @@ RUN (PIP_ROOT_USER_ACTION=ignore; python3 -m pip install pip --upgrade \
 
 # Clone and install SimpleTuner
 # decide for branch "release" or "main" (possibly unstable)
-#RUN git clone https://github.com/bghira/SimpleTuner --branch release
+ENV SIMPLETUNER_BRANCH=release
+#ENV SIMPLETUNER_BRANCH=main
+SHELL ["/bin/bash", "-c"]
 RUN git config --global credential.helper cache \
- && git clone https://github.com/bghira/SimpleTuner --branch main \
+ && git clone https://github.com/bghira/SimpleTuner --branch $SIMPLETUNER_BRANCH \
  && cd SimpleTuner \
  && python3 -m venv .venv \
  && export FORCE_CUDA=1 \
  && poetry config virtualenvs.create false \
  && poetry install --no-root --with jxl \
+ && source .venv/bin/activate \
+ && pip3 install https://github.com/Dao-AILab/flash-attention/releases/download/v2.8.0.post2/flash_attn-2.8.0.post2+cu12torch2.7cxx11abiFALSE-cp310-cp310-linux_x86_64.whl \
+ && pip3 cache purge \
  && poetry cache clear --all pypi \
  && chmod +x train.sh \
  && touch /etc/rp_environment \
  && echo 'source /etc/rp_environment' >> ~/.bashrc
+
+# test FA install:
+#RUN cd SimpleTuner && source .venv/bin/activate \
+# && pip install ninja \
+# && ninja --version \
+# && echo $? \
+# && git clone https://github.com/Dao-AILab/flash-attention \
+# && cd flash-attention/hopper \
+# && MAX_JOBS=4 python3 setup.py install
 
 # Copy start script with exec permissions
 COPY --chmod=755 start.sh /start.sh
