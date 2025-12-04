@@ -40,6 +40,9 @@ fi
 # Start SSH server
 service ssh start
 
+nvidia-smi
+simpletuner --version
+
 # Login to HF
 if [[ -n "${HF_TOKEN:-$HUGGING_FACE_HUB_TOKEN}" ]]; then
   hf auth login --token "${HF_TOKEN:-$HUGGING_FACE_HUB_TOKEN}" --add-to-git-credential
@@ -54,9 +57,41 @@ else
   echo "WANDB_API_KEY or WANDB_TOKEN not set; skipping login"
 fi
 
-nvidia-smi
-simpletuner --version
+R2_BUCKET=${R2_BUCKET:-traindata-transfer}
+if [[ -v R2_access_key_id ]]; then
+  mkdir -p /root/.config/rclone
+  cat >/root/.config/rclone/rclone.conf <<EOL
+[r2]
+type = s3
+provider = Cloudflare
+access_key_id = ${R2_access_key_id}
+secret_access_key = ${R2_secret_access_key}
+endpoint = ${R2_endpoint}
+EOL
+  echo "Cloudflare R2 configured"
+  echo "Bucket: '${R2_BUCKET}'"
 
-# 🫡
-#sleep infinity
-simpletuner server
+  if [[ -v TRAINING_NAME ]]; then
+    echo "Training name set to '${TRAINING_NAME}' - trying automated training"
+    rclone copy r2:${R2_BUCKET}/${TRAINING_NAME}/trainscript.sh /app
+  else
+    echo "Training name NOT set"
+  fi
+else
+  echo "NO Cloudflare R2 configured, set environment!"
+fi
+
+
+if [[ -e /app/trainscript.sh ]]; then
+  echo "trainscript available - running it"
+  echo ""
+
+  bash /app/trainscript.sh
+else
+  echo "NO trainscript found, starting SimpleTuner server"
+  echo ""
+
+  # 🫡
+  #sleep infinity
+  simpletuner server
+fi
