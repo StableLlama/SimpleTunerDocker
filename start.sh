@@ -17,6 +17,13 @@ printenv |
   grep -E '^RUNPOD_|^PATH=|^HF_HOME=|^HF_TOKEN=|^HUGGING_FACE_HUB_TOKEN=|^WANDB_API_KEY=|^WANDB_TOKEN=|^_=' |
   sed 's/^\(.*\)=\(.*\)$/export \1="\2"/' >>/etc/rp_environment
 
+# Setup /workspace/trainconfig/... as default config for SimpleTuner configuration
+ln -sf /workspace/trainconfig /app/SimpleTuner/config/trainconfig
+echo "export ENV=trainconfig" >>/etc/rp_environment
+
+# Add it to Bash login script only if it doesn't already exist
+grep -qxF 'source /etc/rp_environment' ~/.bashrc || echo 'source /etc/rp_environment' >>~/.bashrc
+
 # Vast.ai uses $SSH_PUBLIC_KEY
 if [[ $SSH_PUBLIC_KEY ]]; then
   PUBLIC_KEY="${SSH_PUBLIC_KEY}"
@@ -33,13 +40,9 @@ fi
 # Start SSH server
 service ssh start
 
-# Setup /workspace/trainconfig/... as default config for SimpleTuner configuration
-ln -sf /workspace/trainconfig /app/SimpleTuner/config/trainconfig
-echo "export ENV=trainconfig" >>/etc/rp_environment
-
 # Login to HF
 if [[ -n "${HF_TOKEN:-$HUGGING_FACE_HUB_TOKEN}" ]]; then
-  huggingface-cli login --token "${HF_TOKEN:-$HUGGING_FACE_HUB_TOKEN}" --add-to-git-credential
+  hf auth login --token "${HF_TOKEN:-$HUGGING_FACE_HUB_TOKEN}" --add-to-git-credential
 else
   echo "HF_TOKEN or HUGGING_FACE_HUB_TOKEN not set; skipping login"
 fi
@@ -52,6 +55,8 @@ else
 fi
 
 nvidia-smi
+simpletuner --version
 
 # 🫡
-sleep infinity
+#sleep infinity
+simpletuner server

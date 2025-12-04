@@ -1,5 +1,9 @@
 # Base image with CUDA 12.4.1 and cuDNN
-FROM nvidia/cuda:12.4.1-cudnn-devel-ubuntu22.04
+#FROM nvidia/cuda:12.4.1-cudnn-devel-ubuntu22.04
+#FROM nvidia/cuda:12.6.1-base-ubuntu24.04
+FROM nvidia/cuda:12.6.1-cudnn-devel-ubuntu24.04
+
+ARG PYTHON_VERSION=3.12
 
 # Prevents different commands from being stuck by waiting
 # on user input during build
@@ -17,6 +21,8 @@ WORKDIR /app
 # Install system dependencies
 RUN apt-get update -y \
  && apt-get install -y --no-install-recommends \
+      build-essential \
+      ca-certificates \
       openssh-server \
       openssh-client \
       git \
@@ -37,26 +43,38 @@ RUN apt-get update -y \
       htop \
       inotify-tools \
       nvidia-cuda-toolkit \
-      libgl1-mesa-glx \
       libglib2.0-0 \
+      libopenmpi-dev \
+      openmpi-bin \
       ffmpeg \
       libsm6 \
       libxext6 \
-      python3 \
-      python3-pip \
-      python3.10-venv \
-      python3.10-dev \
+      p7zip-full \
+      python${PYTHON_VERSION} \
+      python${PYTHON_VERSION}-dev \
+      python${PYTHON_VERSION}-venv \
   && curl https://rclone.org/install.sh | bash \
-  && rm -rf /var/lib/apt/lists/*
+  && git config --global credential.helper store \
+  && git lfs install \
+  && rm -rf /var/lib/apt/lists/* \
+  && python${PYTHON_VERSION} -m venv /opt/venv
+
+# Use the virtual environment for all subsequent Python work
+ENV VIRTUAL_ENV=/opt/venv
+ENV PATH="${VIRTUAL_ENV}/bin:${PATH}"
 
 # ----- new RUN for new layer to keep the above stable and frozen -----
 
-RUN (PIP_ROOT_USER_ACTION=ignore; python3 -m pip install pip --upgrade \
- && pip3 install \
+# HuggingFace cache location and platform hint for setup.py
+ENV HF_HOME=/workspace/huggingface
+
+RUN (PIP_ROOT_USER_ACTION=ignore; /opt/venv/bin/pip install --upgrade pip setuptools wheel \
+ && pip install --no-cache-dir \
       "huggingface_hub[cli,hf_transfer]" \
       wandb  \
       poetry \
- && pip3 cache purge)
+      mpi4py \
+ && pip cache purge)
 
 # ----- new RUN for new layer to keep the above stable and frozen -----
 
@@ -68,26 +86,33 @@ RUN (PIP_ROOT_USER_ACTION=ignore; python3 -m pip install pip --upgrade \
 
 # ----- new RUN for new layer to keep the above stable and frozen -----
 
+# === new way of installing: ===
+ENV SIMPLETUNER_PLATFORM=cuda
+
+# Install SimpleTuner from PyPI to match published releases
+##RUN pip install --no-cache-dir simpletuner[cuda,jxl]
+
+# === old way of installing: ===
 # Clone and install SimpleTuner
 # decide for branch "release" or "main" (possibly unstable)
-ENV SIMPLETUNER_BRANCH=release
-#ENV SIMPLETUNER_BRANCH=main
+#ENV SIMPLETUNER_BRANCH=release
+ENV SIMPLETUNER_BRANCH=main
 SHELL ["/bin/bash", "-c"]
-RUN git config --global credential.helper cache \
- && git clone https://github.com/bghira/SimpleTuner --branch $SIMPLETUNER_BRANCH \
+RUN git clone https://github.com/bghira/SimpleTuner --branch $SIMPLETUNER_BRANCH \
  && cd SimpleTuner \
- && python3 -m venv .venv \
+# && python${PYTHON_VERSION} -m venv .venv \
  && export FORCE_CUDA=1 \
- && poetry config virtualenvs.create false \
- && poetry lock \
- && poetry install --no-root --with jxl \
- && source .venv/bin/activate \
- && pip3 install https://github.com/Dao-AILab/flash-attention/releases/download/v2.8.0.post2/flash_attn-2.8.0.post2+cu12torch2.7cxx11abiFALSE-cp310-cp310-linux_x86_64.whl \
- && pip3 cache purge \
- && poetry cache clear --all pypi \
- && chmod +x train.sh \
- && touch /etc/rp_environment \
- && echo 'source /etc/rp_environment' >> ~/.bashrc
+ && pip install -e .[jxl]
+# && poetry config virtualenvs.create false \
+# && poetry lock \
+# && poetry install --no-root --with jxl \
+# && source .venv/bin/activate \
+# && pip3 install https://github.com/Dao-AILab/flash-attention/releases/download/v2.8.0.post2/flash_attn-2.8.0.post2+cu12torch2.7cxx11abiFALSE-cp310-cp310-linux_x86_64.whl \
+# && pip3 cache purge \
+# && poetry cache clear --all pypi \
+# && chmod +x train.sh \
+# && touch /etc/rp_environment \
+# && echo 'source /etc/rp_environment' >> ~/.bashrc
 
 # test FA install:
 #RUN cd SimpleTuner && source .venv/bin/activate \
