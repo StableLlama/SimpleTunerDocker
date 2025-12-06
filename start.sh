@@ -17,12 +17,9 @@ printenv |
   grep -E '^RUNPOD_|^PATH=|^HF_HOME=|^HF_TOKEN=|^HUGGING_FACE_HUB_TOKEN=|^WANDB_API_KEY=|^WANDB_TOKEN=|^_=' |
   sed 's/^\(.*\)=\(.*\)$/export \1="\2"/' >>/etc/rp_environment
 
-# Setup /workspace/trainconfig/... as default config for SimpleTuner configuration
-ln -sf /workspace/trainconfig /app/SimpleTuner/config/trainconfig
-echo "export ENV=trainconfig" >>/etc/rp_environment
-
 # Add it to Bash login script only if it doesn't already exist
 grep -qxF 'source /etc/rp_environment' ~/.bashrc || echo 'source /etc/rp_environment' >>~/.bashrc
+source /etc/rp_environment
 
 # Vast.ai uses $SSH_PUBLIC_KEY
 if [[ $SSH_PUBLIC_KEY ]]; then
@@ -57,6 +54,97 @@ else
   echo "WANDB_API_KEY or WANDB_TOKEN not set; skipping login"
 fi
 
+# Create the accelerate default config
+if [[ ! -e /workspace/huggingface/accelerate/default_config.yaml ]]; then
+  mkdir -p  /workspace/huggingface/accelerate
+  cat >/workspace/huggingface/accelerate/default_config.yaml <<EOL
+compute_environment: LOCAL_MACHINE
+debug: false
+distributed_type: 'NO'
+downcast_bf16: 'no'
+dynamo_config:
+  dynamo_backend: INDUCTOR
+  dynamo_mode: max-autotune
+  dynamo_use_dynamic: false
+  dynamo_use_fullgraph: false
+enable_cpu_affinity: true
+gpu_ids: all
+machine_rank: 0
+main_training_function: main
+mixed_precision: bf16
+num_machines: $TRAINING_NUM_MACHINES
+num_processes: $TRAINING_NUM_PROCESSES
+rdzv_backend: static
+same_network: true
+tpu_env: []
+tpu_use_cluster: false
+tpu_use_sudo: false
+use_cpu: false
+EOL
+fi
+
+if [[ -v GIT_USER && -v GIT_PAT && -v GIT_REPOSITORY ]]; then
+  if [[ ! -e /workspace/simpletuner/config ]]; then
+    pushd /workspace/simpletuner
+    git clone https://$GIT_USER:$GIT_PAT@github.com/$GIT_REPOSITORY config
+    popd
+  else
+    pushd /workspace/simpletuner/config
+    git reset --hard
+    git pull
+    popd
+  fi
+else
+  echo "Git access not properly setup! All three environment variables are needed!"
+  echo "GIT_USER: '$GIT_USER'"
+  echo "GIT_PAT: '$GIT_PAT'"
+  echo "GIT_REPOSITORY: '$GIT_REPOSITORY'"
+fi
+
+# Setup the SimpleTuner onboarding config with the correct paths for this setup
+TIMESTAMP=$(date -u +"%Y-%m-%dT%H:%M:%S.%6N%:z")s
+
+mkdir -p /workspace/simpletuner/datasets
+mkdir -p /workspace/simpletuner/output
+
+if [[ ! -e /workspace/simpletuner/webui/onboarding.json ]]; then
+  mkdir -p /workspace/simpletuner/webui
+  cat >/workspace/simpletuner/webui/onboarding.json <<EOL
+{
+  "steps": {
+    "accelerate_defaults": {
+      "completed_at": "$TIMESTAMP",
+      "completed_version": 1,
+      "value": {
+        "--num_processes": $TRAINING_NUM_PROCESSES,
+        "mode": "auto"
+      }
+    },
+    "create_initial_environment": {
+      "completed_at": "$TIMESTAMP",
+      "completed_version": 1,
+      "value": "$TRAINING_NAME"
+    },
+    "default_configs_dir": {
+      "completed_at": "$TIMESTAMP",
+      "completed_version": 2,
+      "value": "/workspace/simpletuner/config"
+    },
+    "default_datasets_dir": {
+      "completed_at": "$TIMESTAMP",
+      "completed_version": 2,
+      "value": "/workspace/simpletuner/datasets"
+    },
+    "default_output_dir": {
+      "completed_at": "$TIMESTAMP",
+      "completed_version": 1,
+      "value": "/workspace/simpletuner/output"
+    }
+  }
+}
+EOL
+fi
+
 R2_BUCKET=${R2_BUCKET:-traindata-transfer}
 if [[ -v R2_access_key_id ]]; then
   mkdir -p /root/.config/rclone
@@ -73,7 +161,7 @@ EOL
 
   if [[ -v TRAINING_NAME ]]; then
     echo "Training name set to '${TRAINING_NAME}' - trying automated training"
-    rclone copy r2:${R2_BUCKET}/${TRAINING_NAME}/trainscript.sh /app
+    rclone copy r2:${R2_BUCKET}/${TRAINING_NAME}/trainscript.sh /workspace
   else
     echo "Training name NOT set"
   fi
@@ -81,12 +169,11 @@ else
   echo "NO Cloudflare R2 configured, set environment!"
 fi
 
-
-if [[ -e /app/trainscript.sh ]]; then
+if [[ -e /workspace/trainscript.sh ]]; then
   echo "trainscript available - running it"
   echo ""
 
-  bash /app/trainscript.sh
+  source /workspace/trainscript.sh
 else
   echo "NO trainscript found, starting SimpleTuner server"
   echo ""

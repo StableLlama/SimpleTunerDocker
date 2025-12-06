@@ -1,16 +1,21 @@
 # Base image with CUDA 12.4.1 and cuDNN
 #FROM nvidia/cuda:12.4.1-cudnn-devel-ubuntu22.04
 #FROM nvidia/cuda:12.6.1-base-ubuntu24.04
-FROM nvidia/cuda:12.6.1-cudnn-devel-ubuntu24.04
+#FROM nvidia/cuda:12.6.1-cudnn-devel-ubuntu24.04
+#FROM nvidia/cuda:12.8.1-cudnn-runtime-ubuntu24.04
+FROM nvidia/cuda:12.8.1-cudnn-devel-ubuntu24.04
+
+# 8.9 = Ada
+ENV TORCH_CUDA_ARCH_LIST=8.9
+ENV CUDA_HOME=/usr/local/cuda-12.8
+ENV LIBRARY_PATH=$CUDA_HOME/targets/x86_64-linux/lib/stubs:$LIBRARY_PATH
+ENV LD_LIBRARY_PATH=$CUDA_HOME/lib64:$CUDA_HOME/targets/x86_64-linux/lib/stubs:$LD_LIBRARY_PATH
 
 ARG PYTHON_VERSION=3.12
 
 # Prevents different commands from being stuck by waiting
 # on user input during build
 ENV DEBIAN_FRONTEND=noninteractive
-
-# HF
-ENV HF_HOME=/workspace/huggingface
 
 # /workspace is a common volume for hosts like Runpod
 VOLUME /workspace
@@ -86,11 +91,16 @@ RUN (PIP_ROOT_USER_ACTION=ignore; /opt/venv/bin/pip install --upgrade pip setupt
 
 # ----- new RUN for new layer to keep the above stable and frozen -----
 
+RUN mkdir -p /workspace/simpletuner
+ENV SIMPLETUNER_WORKSPACE=/workspace/simpletuner
+
 # === new way of installing: ===
 ENV SIMPLETUNER_PLATFORM=cuda
 
 # Install SimpleTuner from PyPI to match published releases
 ##RUN pip install --no-cache-dir simpletuner[cuda,jxl]
+## && touch /etc/rp_environment \
+## && echo 'source /etc/rp_environment' >> ~/.bashrc
 
 # === old way of installing: ===
 # Clone and install SimpleTuner
@@ -100,19 +110,13 @@ ENV SIMPLETUNER_BRANCH=main
 SHELL ["/bin/bash", "-c"]
 RUN git clone https://github.com/bghira/SimpleTuner --branch $SIMPLETUNER_BRANCH \
  && cd SimpleTuner \
-# && python${PYTHON_VERSION} -m venv .venv \
  && export FORCE_CUDA=1 \
- && pip install -e .[jxl]
-# && poetry config virtualenvs.create false \
-# && poetry lock \
-# && poetry install --no-root --with jxl \
-# && source .venv/bin/activate \
-# && pip3 install https://github.com/Dao-AILab/flash-attention/releases/download/v2.8.0.post2/flash_attn-2.8.0.post2+cu12torch2.7cxx11abiFALSE-cp310-cp310-linux_x86_64.whl \
-# && pip3 cache purge \
-# && poetry cache clear --all pypi \
-# && chmod +x train.sh \
-# && touch /etc/rp_environment \
-# && echo 'source /etc/rp_environment' >> ~/.bashrc
+ && pip install --no-cache-dir -e .[jxl] \
+ && pip install --no-build-isolation --no-cache-dir \
+      sageattention==2.2.0 \
+ && pip cache purge \
+ && touch /etc/rp_environment \
+ && echo 'source /etc/rp_environment' >> ~/.bashrc
 
 # test FA install:
 #RUN cd SimpleTuner && source .venv/bin/activate \
