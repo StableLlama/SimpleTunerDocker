@@ -36,6 +36,9 @@ if [[ $PUBLIC_KEY ]]; then
   chmod 700 -R ~/.ssh
 fi
 
+# disable SSH password login - use key instead!
+sed -i -E 's/#?PasswordAuthentication yes/PasswordAuthentication no/' /etc/ssh/sshd_config
+
 # Start SSH server
 service ssh start
 
@@ -95,7 +98,7 @@ if [[ -v GIT_USER && -v GIT_PAT && -v GIT_REPOSITORY ]]; then
     pushd /workspace/simpletuner > /dev/null
     git config --global user.email "${GIT_EMAIL:-you@example.com}"
     git config --global user.name "${GIT_USER}"
-    git clone "https://${GIT_USER}:${GIT_PAT}@github.com/${GIT_REPOSITORY}" config
+    git clone --depth 1 "https://${GIT_USER}:${GIT_PAT}@github.com/${GIT_REPOSITORY}" config
     popd > /dev/null
   else
     pushd /workspace/simpletuner/config > /dev/null
@@ -155,9 +158,11 @@ if [[ ! -e /workspace/simpletuner/webui/onboarding.json ]]; then
 EOL
 fi
 
+mkdir -p /var/log/portal/
+
 if [[ -v TRAINING_NAME && -e /workspace/simpletuner/config/$TRAINING_NAME/preparation.sh ]]; then
   echo "running preparation for '${TRAINING_NAME}'"
-  source "/workspace/simpletuner/config/${TRAINING_NAME}/preparation.sh"
+  source "/workspace/simpletuner/config/${TRAINING_NAME}/preparation.sh" | tee -a "/var/log/portal/preparation.sh.log"
 fi
 
 if [[ -v DIRECT_TRAINING ]]; then
@@ -168,12 +173,17 @@ if [[ -v DIRECT_TRAINING ]]; then
     GIT_TRAINING_TAG="${TRAINING_NAME}_$(date -u +"%Y%m%d_%H%M%S")"
     git tag "${GIT_TRAINING_TAG}" -m "Training of '${TRAINING_NAME}' started at $(date -u +"%Y-%m-%dT%H:%M:%S.%6N%:z")"
     git push origin "${GIT_TRAINING_TAG}"
-    simpletuner train
+    simpletuner train | tee -a "/var/log/portal/simpletuner.log"
   else
     echo "ERROR: TRAINING_NAME not set, please set it to define what should be trained!"
   fi
 else
   echo "Starting SimpleTuner server"
   echo ""
-  simpletuner server
+  simpletuner server | tee -a "/var/log/portal/simpletuner.log"
+fi
+
+if [[ -v SLEEP_WHEN_FINISHED ]]; then
+  echo "Finished, now going to sleep as requested"
+  sleep infinity
 fi

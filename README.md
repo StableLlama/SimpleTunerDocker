@@ -27,3 +27,5 @@ Relevant environment variables:
   Wandb API key.
 - **`NO_DYNAMO`**
   Do not use Dynamo / inductor.
+- **`SLEEP_WHEN_FINISHED`**
+  After the training has ended do not exit the container but sleep.
