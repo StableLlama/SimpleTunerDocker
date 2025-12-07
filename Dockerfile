@@ -62,6 +62,8 @@ RUN apt-get update -y \
   && git config --global credential.helper store \
   && git lfs install \
   && rm -rf /var/lib/apt/lists/* \
+  && touch /etc/rp_environment \
+  && echo 'source /etc/rp_environment' >> ~/.bashrc \
   && python${PYTHON_VERSION} -m venv /opt/venv
 
 # Use the virtual environment for all subsequent Python work
@@ -98,9 +100,14 @@ ENV SIMPLETUNER_WORKSPACE=/workspace/simpletuner
 ENV SIMPLETUNER_PLATFORM=cuda
 
 # Install SimpleTuner from PyPI to match published releases
-##RUN pip install --no-cache-dir simpletuner[cuda,jxl]
-## && touch /etc/rp_environment \
-## && echo 'source /etc/rp_environment' >> ~/.bashrc
+#RUN echo "Installing SimpleTuner" \
+# && pip install --no-cache-dir simpletuner[cuda,jxl] \
+# && echo "Installing SageAttention" \
+# && pip install --no-build-isolation --no-cache-dir \
+#      urllib3>=2.2.2 \
+#      sageattention==2.2.0 \
+# && echo "Installing finished" \
+# && pip cache purge
 
 # === old way of installing: ===
 # Clone and install SimpleTuner
@@ -111,13 +118,14 @@ SHELL ["/bin/bash", "-c"]
 RUN git clone https://github.com/bghira/SimpleTuner --branch $SIMPLETUNER_BRANCH \
  && cd SimpleTuner \
  && export FORCE_CUDA=1 \
+ && echo "Installing SimpleTuner" \
  && pip install --no-cache-dir -e .[jxl] \
+ && echo "Installing SageAttention" \
  && pip install --no-build-isolation --no-cache-dir \
       urllib3>=2.2.2 \
       sageattention==2.2.0 \
- && pip cache purge \
- && touch /etc/rp_environment \
- && echo 'source /etc/rp_environment' >> ~/.bashrc
+ && echo "Installing finished" \
+ && pip cache purge
 
 # test FA install:
 #RUN cd SimpleTuner && source .venv/bin/activate \
