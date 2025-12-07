@@ -113,6 +113,7 @@ RUN git clone https://github.com/bghira/SimpleTuner --branch $SIMPLETUNER_BRANCH
  && export FORCE_CUDA=1 \
  && pip install --no-cache-dir -e .[jxl] \
  && pip install --no-build-isolation --no-cache-dir \
+      urllib3>=2.2.2 \
       sageattention==2.2.0 \
  && pip cache purge \
  && touch /etc/rp_environment \
