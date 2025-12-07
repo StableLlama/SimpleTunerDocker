@@ -84,21 +84,25 @@ EOL
 fi
 
 if [[ -v GIT_USER && -v GIT_PAT && -v GIT_REPOSITORY ]]; then
+  echo "Setting up GitHub based config"
   if [[ ! -e /workspace/simpletuner/config ]]; then
-    pushd /workspace/simpletuner
-    git clone https://$GIT_USER:$GIT_PAT@github.com/$GIT_REPOSITORY config
-    popd
+    pushd /workspace/simpletuner > /dev/null
+    git config --global user.email "${GIT_EMAIL:-you@example.com}"
+    git config --global user.name "${GIT_USER}"
+    git clone "https://${GIT_USER}:${GIT_PAT}@github.com/${GIT_REPOSITORY}" config
+    popd > /dev/null
   else
-    pushd /workspace/simpletuner/config
+    pushd /workspace/simpletuner/config > /dev/null
     git reset --hard
     git pull
-    popd
+    popd > /dev/null
   fi
 else
-  echo "Git access not properly setup! All three environment variables are needed!"
-  echo "GIT_USER: '$GIT_USER'"
-  echo "GIT_PAT: '$GIT_PAT'"
-  echo "GIT_REPOSITORY: '$GIT_REPOSITORY'"
+  echo "ERROR: Git access not properly setup! All three environment variables are needed!"
+  echo "GIT_USER: '${GIT_USER}'"
+  echo "GIT_PAT: '${GIT_PAT}'"
+  echo "GIT_REPOSITORY: '${GIT_REPOSITORY}'"
+  exit
 fi
 
 # Setup the SimpleTuner onboarding config with the correct paths for this setup
@@ -145,40 +149,25 @@ if [[ ! -e /workspace/simpletuner/webui/onboarding.json ]]; then
 EOL
 fi
 
-R2_BUCKET=${R2_BUCKET:-traindata-transfer}
-if [[ -v R2_access_key_id ]]; then
-  mkdir -p /root/.config/rclone
-  cat >/root/.config/rclone/rclone.conf <<EOL
-[r2]
-type = s3
-provider = Cloudflare
-access_key_id = ${R2_access_key_id}
-secret_access_key = ${R2_secret_access_key}
-endpoint = ${R2_endpoint}
-EOL
-  echo "Cloudflare R2 configured"
-  echo "Bucket: '${R2_BUCKET}'"
-
-  if [[ -v TRAINING_NAME ]]; then
-    echo "Training name set to '${TRAINING_NAME}' - trying automated training"
-    rclone copy r2:${R2_BUCKET}/${TRAINING_NAME}/trainscript.sh /workspace
-  else
-    echo "Training name NOT set"
-  fi
-else
-  echo "NO Cloudflare R2 configured, set environment!"
+if [[ -v TRAINING_NAME && -e /workspace/simpletuner/config/$TRAINING_NAME/preparation.sh ]]; then
+  echo "running preparation for '${TRAINING_NAME}'"
+  source "/workspace/simpletuner/config/${TRAINING_NAME}/preparation.sh"
 fi
 
-if [[ -e /workspace/trainscript.sh ]]; then
-  echo "trainscript available - running it"
-  echo ""
-
-  source /workspace/trainscript.sh
+if [[ -v DIRECT_TRAINING ]]; then
+  echo "Configured to start training immediately"
+  if [[ -v TRAINING_NAME ]]; then
+    echo ""
+    cd "/workspace/simpletuner/config/$TRAINING_NAME/"
+    GIT_TRAINING_TAG="${TRAINING_NAME}_$(date -u +"%Y%m%d_%H%M%S")"
+    git tag "${GIT_TRAINING_TAG}" -m "Training of '${TRAINING_NAME}' started at $(date -u +"%Y-%m-%dT%H:%M:%S.%6N%:z")"
+    git push origin "${GIT_TRAINING_TAG}"
+    simpletuner train
+  else
+    echo "ERROR: TRAINING_NAME not set, please set it to define what should be trained!"
+  fi
 else
-  echo "NO trainscript found, starting SimpleTuner server"
+  echo "Starting SimpleTuner server"
   echo ""
-
-  # 🫡
-  #sleep infinity
   simpletuner server
 fi
