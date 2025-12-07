@@ -25,3 +25,5 @@ Relevant environment variables:
   Hugging Face token.
 - **`WANDB_API_KEY`**
   Wandb API key.
+- **`NO_DYNAMO`**
+  Do not use Dynamo / inductor.

@@ -23,11 +23,13 @@ source /etc/rp_environment
 
 # Vast.ai uses $SSH_PUBLIC_KEY
 if [[ $SSH_PUBLIC_KEY ]]; then
+  echo "INFO: Found SSH_PUBLIC_KEY, using it as PUBLIC_KEY"
   PUBLIC_KEY="${SSH_PUBLIC_KEY}"
 fi
 
 # Runpod uses $PUBLIC_KEY
 if [[ $PUBLIC_KEY ]]; then
+  echo "INFO: Setting up SSH, adding PUBLIC_KEY to authorized_keys"
   mkdir -p ~/.ssh
   chmod 700 ~/.ssh
   echo "${PUBLIC_KEY}" >>~/.ssh/authorized_keys
@@ -81,6 +83,10 @@ tpu_use_cluster: false
 tpu_use_sudo: false
 use_cpu: false
 EOL
+fi
+if [[ -v NO_DYNAMO ]]; then
+  echo "Dynamo disabled - removing it from accelerate config"
+  sed -i "/dynamo/d" /workspace/huggingface/accelerate/default_config.yaml
 fi
 
 if [[ -v GIT_USER && -v GIT_PAT && -v GIT_REPOSITORY ]]; then
