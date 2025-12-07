@@ -104,8 +104,7 @@ ENV SIMPLETUNER_PLATFORM=cuda
 # && pip install --no-cache-dir simpletuner[cuda,jxl] \
 # && echo "Installing SageAttention" \
 # && pip install --no-build-isolation --no-cache-dir \
-#      urllib3>=2.2.2 \
-#      sageattention==2.2.0 \
+#      sageattention==1.0.6 \
 # && echo "Installing finished" \
 # && pip cache purge
 
@@ -122,8 +121,7 @@ RUN git clone https://github.com/bghira/SimpleTuner --branch $SIMPLETUNER_BRANCH
  && pip install --no-cache-dir -e .[jxl] \
  && echo "Installing SageAttention" \
  && pip install --no-build-isolation --no-cache-dir \
-      urllib3>=2.2.2 \
-      sageattention==2.2.0 \
+      sageattention==1.0.6 \
  && echo "Installing finished" \
  && pip cache purge
 
