@@ -139,6 +139,7 @@ COPY --chmod=755 start.sh /start.sh
 
 # Ensure SSH access. Not needed for Runpod but is required on Vast and other Docker hosts
 EXPOSE 22/tcp
+EXPOSE 8080/tcp
 
 # Dummy entrypoint
 ENTRYPOINT [ "/start.sh" ]

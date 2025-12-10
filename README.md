@@ -36,6 +36,8 @@ Directory structure:
 ├── caption_filters
 ├── my_training_environment1
 │   ├── config.json
+│   ├── lycoris_config.json
+│   ├── multidatabackend-DataBackend-Name.json
 │   └── preparation.sh
 ├── my_training_environment2
 └── validation_prompt_libraries
