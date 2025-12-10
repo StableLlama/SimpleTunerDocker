@@ -162,9 +162,11 @@ mkdir -p /var/log/portal/
 
 if [[ -v TRAINING_NAME && -e /workspace/simpletuner/config/$TRAINING_NAME/preparation.sh ]]; then
   echo "running preparation for '${TRAINING_NAME}'"
+  rm -f /var/log/portal/preparation.sh.log
   source "/workspace/simpletuner/config/${TRAINING_NAME}/preparation.sh" | tee -a "/var/log/portal/preparation.sh.log"
 fi
 
+rm -f /var/log/portal/simpletuner.log
 if [[ -v DIRECT_TRAINING ]]; then
   echo "Configured to start training immediately"
   if [[ -v TRAINING_NAME ]]; then
@@ -173,14 +175,14 @@ if [[ -v DIRECT_TRAINING ]]; then
     GIT_TRAINING_TAG="${TRAINING_NAME}_$(date -u +"%Y%m%d_%H%M%S")"
     git tag "${GIT_TRAINING_TAG}" -m "Training of '${TRAINING_NAME}' started at $(date -u +"%Y-%m-%dT%H:%M:%S.%6N%:z")"
     git push origin "${GIT_TRAINING_TAG}"
-    simpletuner train | tee -a "/var/log/portal/simpletuner.log"
+    simpletuner train 2>&1 | tee -a "/var/log/portal/simpletuner.log"
   else
     echo "ERROR: TRAINING_NAME not set, please set it to define what should be trained!"
   fi
 else
   echo "Starting SimpleTuner server"
   echo ""
-  simpletuner server | tee -a "/var/log/portal/simpletuner.log"
+  simpletuner server 2>&1 | tee -a "/var/log/portal/simpletuner.log"
 fi
 
 if [[ -v SLEEP_WHEN_FINISHED ]]; then
