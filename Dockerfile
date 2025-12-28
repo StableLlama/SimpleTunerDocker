@@ -114,8 +114,11 @@ ENV SIMPLETUNER_PLATFORM=cuda
 #ENV SIMPLETUNER_BRANCH=release
 ENV SIMPLETUNER_BRANCH=main
 SHELL ["/bin/bash", "-c"]
-RUN git clone https://github.com/bghira/SimpleTuner --branch $SIMPLETUNER_BRANCH \
+RUN echo "Installing SimpleTuner from Git" \
+ && git clone https://github.com/bghira/SimpleTuner --branch $SIMPLETUNER_BRANCH \
  && cd SimpleTuner \
+    ### TMP: try a PR \
+ #&& git switch feature/git-config-mirroring \
  && export FORCE_CUDA=1 \
  && echo "Installing SimpleTuner" \
  && pip install --no-cache-dir -e .[jxl] \
@@ -139,7 +142,8 @@ COPY --chmod=755 start.sh /start.sh
 
 # Ensure SSH access. Not needed for Runpod but is required on Vast and other Docker hosts
 EXPOSE 22/tcp
-EXPOSE 8080/tcp
+# WebUI
+EXPOSE 8001/tcp
 
 # Dummy entrypoint
 ENTRYPOINT [ "/start.sh" ]

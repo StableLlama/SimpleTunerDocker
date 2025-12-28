@@ -167,22 +167,29 @@ if [[ -v TRAINING_NAME && -e /workspace/simpletuner/config/$TRAINING_NAME/prepar
 fi
 
 rm -f /var/log/portal/simpletuner.log
+if [[ -v USE_SSL ]]; then
+  echo "Starting SimpleTuner server (with SSL)"
+  SSL_OPTION="--ssl"
+else
+  echo "Starting SimpleTuner server (without SSL)"
+  SSL_OPTION=""
+fi
 if [[ -v DIRECT_TRAINING ]]; then
   echo "Configured to start training immediately"
   if [[ -v TRAINING_NAME ]]; then
     echo ""
-    cd "/workspace/simpletuner/config/$TRAINING_NAME/"
+    cd "/workspace/simpletuner/config/${TRAINING_NAME}/"
     GIT_TRAINING_TAG="${TRAINING_NAME}_$(date -u +"%Y%m%d_%H%M%S")"
     git tag "${GIT_TRAINING_TAG}" -m "Training of '${TRAINING_NAME}' started at $(date -u +"%Y-%m-%dT%H:%M:%S.%6N%:z")"
     git push origin "${GIT_TRAINING_TAG}"
-    simpletuner train 2>&1 | tee -a "/var/log/portal/simpletuner.log"
+    export SIMPLETUNER_JOB_ID="${GIT_TRAINING_TAG}"
+    simpletuner server $SSL_OPTION --env "${TRAINING_NAME}" 2>&1 | tee -a "/var/log/portal/simpletuner.log"
   else
     echo "ERROR: TRAINING_NAME not set, please set it to define what should be trained!"
   fi
 else
-  echo "Starting SimpleTuner server"
   echo ""
-  simpletuner server 2>&1 | tee -a "/var/log/portal/simpletuner.log"
+  simpletuner server $SSL_OPTION 2>&1 | tee -a "/var/log/portal/simpletuner.log"
 fi
 
 if [[ -v SLEEP_WHEN_FINISHED ]]; then

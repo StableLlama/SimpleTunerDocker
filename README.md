@@ -48,3 +48,5 @@ Interesting paths in the running container:
 
 - `/var/log/portal/simpletuner.log`
   The SimpleTuner log file. Use `tail -f /var/log/portal/simpletuner.log` to follow the log.
+- `/workspace/huggingface/accelerate/default_config.yaml`
+  The accelerate configuration file to use. 
