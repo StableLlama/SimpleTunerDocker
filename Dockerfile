@@ -64,11 +64,16 @@ RUN apt-get update -y \
   && rm -rf /var/lib/apt/lists/* \
   && touch /etc/rp_environment \
   && echo 'source /etc/rp_environment' >> ~/.bashrc \
+  && echo 'echo ""' >> ~/.bashrc \
+  && echo 'echo "------------------------"' >> ~/.bashrc \
+  && echo 'echo "Live log of SimpleTuner: /var/log/portal/simpletuner.log"' >> ~/.bashrc \
+  && echo 'echo "tail -n 9999 -f /var/log/portal/simpletuner.log"' >> ~/.bashrc \
+  && echo 'echo "------------------------"' >> ~/.bashrc \
   && python${PYTHON_VERSION} -m venv /opt/venv
 
 # Use the virtual environment for all subsequent Python work
-ENV VIRTUAL_ENV=/opt/venv
-ENV PATH="${VIRTUAL_ENV}/bin:${PATH}"
+ENV VENV_PATH=/opt/venv
+ENV PATH="${VENV_PATH}/bin:${PATH}"
 
 # ----- new RUN for new layer to keep the above stable and frozen -----
 
@@ -117,14 +122,14 @@ SHELL ["/bin/bash", "-c"]
 RUN echo "Installing SimpleTuner from Git" \
  && git clone https://github.com/bghira/SimpleTuner --branch $SIMPLETUNER_BRANCH \
  && cd SimpleTuner \
-    ### TMP: try a PR \
- #&& git switch feature/git-config-mirroring \
+ #   ### TMP: try a PR \
+ #&& git switch feature/orchestrator-worker-discovery \
  && export FORCE_CUDA=1 \
  && echo "Installing SimpleTuner" \
  && pip install --no-cache-dir -e .[jxl] \
- && echo "Installing SageAttention" \
- && pip install --no-build-isolation --no-cache-dir \
-      sageattention==1.0.6 \
+ #&& echo "Installing SageAttention" \
+ #&& pip install --no-build-isolation --no-cache-dir \
+ #     sageattention==1.0.6 \
  && echo "Installing finished" \
  && pip cache purge
 
