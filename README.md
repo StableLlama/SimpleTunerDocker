@@ -6,7 +6,7 @@ This project provides Docker containers for running [SimpleTuner](https://github
 
 Available from https://hub.docker.com/r/stablellama/simpletuner
 
-Relevant environment variables:
+Relevant environment variables to be set for the Docker container:
 
 - `TRAINING_NAME`
   The "Environment" to use in SimpleTuner.
@@ -29,6 +29,17 @@ Relevant environment variables:
   Do not use Dynamo / inductor.
 - `SLEEP_WHEN_FINISHED`
   After the training has ended do not exit the container but sleep.
+
+Addionally available environment variables, e.g. use with the `modelspec_comment`
+field in the training configuration:
+
+- `GPU_COUNT`
+- `SIMPLETUNER_VERSION`
+- `START_TIME`
+  Start time of the container (startup script)
+- `START_TIMESTAMP`
+  Start time of the container (startup script)
+- `TRAINING_NUM_PROCESSES`
 
 Directory structure:
 ```aiignore

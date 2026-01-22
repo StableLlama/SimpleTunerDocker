@@ -17,6 +17,10 @@ printenv |
   grep -E '^RUNPOD_|^PATH=|^HF_HOME=|^HF_TOKEN=|^HUGGING_FACE_HUB_TOKEN=|^WANDB_API_KEY=|^WANDB_TOKEN=|^_=' |
   sed 's/^\(.*\)=\(.*\)$/export \1="\2"/' >>/etc/rp_environment
 
+echo "export SIMPLETUNER_VERSION='$(simpletuner --version 2>/dev/null | xargs)'" >>/etc/rp_environment
+echo "export START_TIME=$(date -u +"%Y%m%d_%H%M%S")" >>/etc/rp_environment
+echo "export START_TIMESTAMP=$(date -u +"%Y-%m-%dT%H:%M:%S.%6N%:z")" >>/etc/rp_environment
+
 # Add it to Bash login script only if it doesn't already exist
 grep -qxF 'source /etc/rp_environment' ~/.bashrc || echo 'source /etc/rp_environment' >>~/.bashrc
 source /etc/rp_environment
@@ -43,7 +47,7 @@ sed -i -E 's/#?PasswordAuthentication yes/PasswordAuthentication no/' /etc/ssh/s
 service ssh start
 
 nvidia-smi
-simpletuner --version
+echo "Version: ${SIMPLETUNER_VERSION}"
 
 # Login to HF
 if [[ -n "${HF_TOKEN:-$HUGGING_FACE_HUB_TOKEN}" ]]; then
@@ -115,7 +119,7 @@ else
 fi
 
 # Setup the SimpleTuner onboarding config with the correct paths for this setup
-TIMESTAMP=$(date -u +"%Y-%m-%dT%H:%M:%S.%6N%:z")s
+TIMESTAMP="${START_TIMESTAMP}s"
 
 mkdir -p /workspace/simpletuner/datasets
 mkdir -p /workspace/simpletuner/output
@@ -240,8 +244,8 @@ if [[ -v DIRECT_TRAINING ]]; then
   if [[ -v TRAINING_NAME ]]; then
     echo ""
     cd "/workspace/simpletuner/config/${TRAINING_NAME}/"
-    GIT_TRAINING_TAG="${TRAINING_NAME}_$(date -u +"%Y%m%d_%H%M%S")"
-    git tag "${GIT_TRAINING_TAG}" -m "Training of '${TRAINING_NAME}' started at $(date -u +"%Y-%m-%dT%H:%M:%S.%6N%:z")"
+    GIT_TRAINING_TAG="${TRAINING_NAME}_${START_TIME}"
+    git tag "${GIT_TRAINING_TAG}" -m "Training of '${TRAINING_NAME}' started at ${START_TIMESTAMP}"
     git push origin "${GIT_TRAINING_TAG}"
     export SIMPLETUNER_JOB_ID="${GIT_TRAINING_TAG}"
     simpletuner server $SSL_OPTION --env "${TRAINING_NAME}" --host 0.0.0.0 --port 8001 2>&1 | tee -a "/var/log/portal/simpletuner.log"

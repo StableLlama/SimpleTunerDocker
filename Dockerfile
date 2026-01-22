@@ -1,8 +1,4 @@
-# Base image with CUDA 12.4.1 and cuDNN
-#FROM nvidia/cuda:12.4.1-cudnn-devel-ubuntu22.04
-#FROM nvidia/cuda:12.6.1-base-ubuntu24.04
-#FROM nvidia/cuda:12.6.1-cudnn-devel-ubuntu24.04
-#FROM nvidia/cuda:12.8.1-cudnn-runtime-ubuntu24.04
+# Base image with CUDA 12.8.1 and cuDNN
 FROM nvidia/cuda:12.8.1-cudnn-devel-ubuntu24.04
 
 # 8.9 = Ada
@@ -116,20 +112,20 @@ ENV SIMPLETUNER_PLATFORM=cuda
 # === old way of installing: ===
 # Clone and install SimpleTuner
 # decide for branch "release" or "main" (possibly unstable)
-#ENV SIMPLETUNER_BRANCH=release
-ENV SIMPLETUNER_BRANCH=main
+ENV SIMPLETUNER_BRANCH=release
+#ENV SIMPLETUNER_BRANCH=main
 SHELL ["/bin/bash", "-c"]
-RUN echo "Installing SimpleTuner from Git" \
+RUN echo "Installing SimpleTuner from Git " \
  && git clone https://github.com/bghira/SimpleTuner --branch $SIMPLETUNER_BRANCH \
  && cd SimpleTuner \
  #   ### TMP: try a PR \
  #&& git switch feature/orchestrator-worker-discovery \
  && export FORCE_CUDA=1 \
  && echo "Installing SimpleTuner" \
- && pip install --no-cache-dir -e .[jxl] \
- #&& echo "Installing SageAttention" \
- #&& pip install --no-build-isolation --no-cache-dir \
- #     sageattention==1.0.6 \
+ && pip install --no-cache-dir -e .[cuda,jxl] \
+ && echo "Installing SageAttention" \
+ && pip install --no-build-isolation --no-cache-dir \
+      sageattention==1.0.6 \
  && echo "Installing finished" \
  && pip cache purge
 
