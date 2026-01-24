@@ -1,8 +1,9 @@
 #!/bin/bash
 
+cp /etc/rp_build_environment /etc/rp_environment
 # useful information
 # see also: https://github.com/bghira/SimpleTuner/blob/main/OPTIONS.md#environment-configuration-variables
-echo "export GPU_COUNT=$(nvidia-smi --list-gpus | wc -l)" >/etc/rp_environment
+echo "export GPU_COUNT=$(nvidia-smi --list-gpus | wc -l)" >>/etc/rp_environment
 echo "export DISABLE_UPDATES=true" >>/etc/rp_environment
 echo "export TRAINING_NUM_PROCESSES=$(nvidia-smi --list-gpus | wc -l)" >>/etc/rp_environment
 echo "export TRAINING_NUM_MACHINES=1" >>/etc/rp_environment
@@ -232,6 +233,7 @@ if [[ -v TRAINING_NAME && -e /workspace/simpletuner/config/$TRAINING_NAME/prepar
 fi
 
 rm -f /var/log/portal/simpletuner.log
+source ${VENV_PATH}/bin/activate
 if [[ -v USE_SSL ]]; then
   echo "Starting SimpleTuner server (with SSL)"
   SSL_OPTION="--ssl"

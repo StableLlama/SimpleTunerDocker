@@ -19,6 +19,8 @@ VOLUME /workspace
 # Set the working directory inside the container
 WORKDIR /app
 
+ENV VENV_PATH=/opt/venv
+
 # Install system dependencies
 RUN apt-get update -y \
  && apt-get install -y --no-install-recommends \
@@ -65,10 +67,9 @@ RUN apt-get update -y \
   && echo 'echo "Live log of SimpleTuner: /var/log/portal/simpletuner.log"' >> ~/.bashrc \
   && echo 'echo "tail -n 9999 -f /var/log/portal/simpletuner.log"' >> ~/.bashrc \
   && echo 'echo "------------------------"' >> ~/.bashrc \
-  && python${PYTHON_VERSION} -m venv /opt/venv
+  && python${PYTHON_VERSION} -m venv ${VENV_PATH}
 
 # Use the virtual environment for all subsequent Python work
-ENV VENV_PATH=/opt/venv
 ENV PATH="${VENV_PATH}/bin:${PATH}"
 
 # ----- new RUN for new layer to keep the above stable and frozen -----
@@ -94,7 +95,8 @@ RUN (PIP_ROOT_USER_ACTION=ignore; /opt/venv/bin/pip install --upgrade pip setupt
 
 # ----- new RUN for new layer to keep the above stable and frozen -----
 
-RUN mkdir -p /workspace/simpletuner
+RUN mkdir -p /workspace/simpletuner \
+ && echo "export BUILD_TIMESTAMP=$(date -u +"%Y-%m-%dT%H:%M:%S.%6N%:z")" >/etc/rp_build_environment
 ENV SIMPLETUNER_WORKSPACE=/workspace/simpletuner
 
 # === new way of installing: ===
@@ -102,6 +104,7 @@ ENV SIMPLETUNER_PLATFORM=cuda
 
 # Install SimpleTuner from PyPI to match published releases
 #RUN echo "Installing SimpleTuner" \
+# && echo "export SIMPLETUNER_INSTALL_TYPE=pip" >>/etc/rp_build_environment" \
 # && pip install --no-cache-dir simpletuner[cuda,jxl] \
 # && echo "Installing SageAttention" \
 # && pip install --no-build-isolation --no-cache-dir \
@@ -116,16 +119,19 @@ ENV SIMPLETUNER_BRANCH=release
 #ENV SIMPLETUNER_BRANCH=main
 SHELL ["/bin/bash", "-c"]
 RUN echo "Installing SimpleTuner from Git " \
- && git clone https://github.com/bghira/SimpleTuner --branch $SIMPLETUNER_BRANCH \
+ && echo "export SIMPLETUNER_INSTALL_TYPE=git" >>/etc/rp_build_environment \
+ && git clone --depth 1 https://github.com/bghira/SimpleTuner --branch $SIMPLETUNER_BRANCH \
  && cd SimpleTuner \
+ && echo "export SIMPLETUNER_GIT_REV=$(git rev-parse HEAD)" >>/etc/rp_build_environment \
+ && echo "export SIMPLETUNER_GIT_REV_SHORT=$(git rev-parse --short HEAD)" >>/etc/rp_build_environment \
  #   ### TMP: try a PR \
  #&& git switch feature/orchestrator-worker-discovery \
  && export FORCE_CUDA=1 \
  && echo "Installing SimpleTuner" \
+ && source ${VENV_PATH}/bin/activate \
  && pip install --no-cache-dir -e .[cuda,jxl] \
  && echo "Installing SageAttention" \
- && pip install --no-build-isolation --no-cache-dir \
-      sageattention==1.0.6 \
+ && pip install --no-build-isolation --no-cache-dir sageattention==1.0.6 \
  && echo "Installing finished" \
  && pip cache purge
 
