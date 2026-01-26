@@ -118,7 +118,7 @@ ENV SIMPLETUNER_PLATFORM=cuda
 #ENV SIMPLETUNER_BRANCH=release
 ENV SIMPLETUNER_BRANCH=main
 SHELL ["/bin/bash", "-c"]
-RUN echo "Installing SimpleTuner from Git " \
+RUN echo "Installing SimpleTuner from Git" \
  && echo "export SIMPLETUNER_INSTALL_TYPE=git" >>/etc/rp_build_environment \
  && git clone --depth 1 https://github.com/bghira/SimpleTuner --branch $SIMPLETUNER_BRANCH \
  && cd SimpleTuner \
