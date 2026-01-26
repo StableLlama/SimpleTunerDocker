@@ -28,13 +28,13 @@ source /etc/rp_environment
 
 # Vast.ai uses $SSH_PUBLIC_KEY
 if [[ $SSH_PUBLIC_KEY ]]; then
-  echo "INFO: Found SSH_PUBLIC_KEY, using it as PUBLIC_KEY"
+  echo "INFO: Found SSH_PUBLIC_KEY, using it as PUBLIC_KEY" | tee -a "/var/log/portal/start.sh.log"
   PUBLIC_KEY="${SSH_PUBLIC_KEY}"
 fi
 
 # Runpod uses $PUBLIC_KEY
 if [[ $PUBLIC_KEY ]]; then
-  echo "INFO: Setting up SSH, adding PUBLIC_KEY to authorized_keys"
+  echo "INFO: Setting up SSH, adding PUBLIC_KEY to authorized_keys" | tee -a "/var/log/portal/start.sh.log"
   mkdir -p ~/.ssh
   chmod 700 ~/.ssh
   echo "${PUBLIC_KEY}" >>~/.ssh/authorized_keys
@@ -45,21 +45,21 @@ fi
 sed -i -E 's/#?PasswordAuthentication yes/PasswordAuthentication no/' /etc/ssh/sshd_config
 
 # Start SSH server
-service ssh start | tee -a "/var/log/portal/start.sh.log"
+service ssh start 2>&1 | tee -a "/var/log/portal/start.sh.log"
 
 nvidia-smi | tee -a "/var/log/portal/start.sh.log"
 echo "Version: ${SIMPLETUNER_VERSION}" | tee -a "/var/log/portal/start.sh.log"
 
 # Login to HF
 if [[ -n "${HF_TOKEN:-$HUGGING_FACE_HUB_TOKEN}" ]]; then
-  hf auth login --token "${HF_TOKEN:-$HUGGING_FACE_HUB_TOKEN}" --add-to-git-credential | tee -a "/var/log/portal/start.sh.log"
+  hf auth login --token "${HF_TOKEN:-$HUGGING_FACE_HUB_TOKEN}" --add-to-git-credential 2>&1 | tee -a "/var/log/portal/start.sh.log"
 else
   echo "HF_TOKEN or HUGGING_FACE_HUB_TOKEN not set; skipping login" | tee -a "/var/log/portal/start.sh.log"
 fi
 
 # Login to WanDB
 if [[ -n "${WANDB_API_KEY:-$WANDB_TOKEN}" ]]; then
-  wandb login "${WANDB_API_KEY:-$WANDB_TOKEN}" | tee -a "/var/log/portal/start.sh.log"
+  wandb login "${WANDB_API_KEY:-$WANDB_TOKEN}" 2>&1 | tee -a "/var/log/portal/start.sh.log"
 else
   echo "WANDB_API_KEY or WANDB_TOKEN not set; skipping login" | tee -a "/var/log/portal/start.sh.log"
 fi
@@ -100,14 +100,14 @@ fi
 if [[ -v GIT_USER && -v GIT_PAT && -v GIT_REPOSITORY ]]; then
   echo "Setting up GitHub based config" | tee -a "/var/log/portal/start.sh.log"
   pushd /workspace/simpletuner > /dev/null
-  git config --global user.email "${GIT_EMAIL:-you@example.com}" | tee -a "/var/log/portal/start.sh.log"
-  git config --global user.name "${GIT_USER}" | tee -a "/var/log/portal/start.sh.log"
+  git config --global user.email "${GIT_EMAIL:-you@example.com}" 2>&1 | tee -a "/var/log/portal/start.sh.log"
+  git config --global user.name "${GIT_USER}" 2>&1 | tee -a "/var/log/portal/start.sh.log"
   if [[ ! -e /workspace/simpletuner/config ]]; then
-    git clone --depth 1 "https://${GIT_USER}:${GIT_PAT}@github.com/${GIT_REPOSITORY}" config | tee -a "/var/log/portal/start.sh.log"
+    git clone --depth 1 "https://${GIT_USER}:${GIT_PAT}@github.com/${GIT_REPOSITORY}" config 2>&1 | tee -a "/var/log/portal/start.sh.log"
   else
     pushd /workspace/simpletuner/config > /dev/null
-    git reset --hard | tee -a "/var/log/portal/start.sh.log"
-    git pull | tee -a "/var/log/portal/start.sh.log"
+    git reset --hard 2>&1 | tee -a "/var/log/portal/start.sh.log"
+    git pull 2>&1 | tee -a "/var/log/portal/start.sh.log"
     popd > /dev/null
   fi
   popd > /dev/null
@@ -233,6 +233,7 @@ if [[ -v TRAINING_NAME && -e /workspace/simpletuner/config/$TRAINING_NAME/prepar
 fi
 
 rm -f /var/log/portal/simpletuner.log
+rm -f /workspace/simpletuner/config/cloud
 source ${VENV_PATH}/bin/activate
 if [[ -v USE_SSL ]]; then
   echo "Starting SimpleTuner server (with SSL)" | tee -a "/var/log/portal/start.sh.log"
@@ -244,14 +245,18 @@ fi
 if [[ -v DIRECT_TRAINING ]]; then
   echo "Configured to start training immediately" | tee -a "/var/log/portal/start.sh.log"
   if [[ -v TRAINING_NAME ]]; then
-    echo ""
+    echo "" | tee -a "/var/log/portal/start.sh.log"
     cd "/workspace/simpletuner/config/${TRAINING_NAME}/"
     GIT_TRAINING_TAG="${TRAINING_NAME}_${START_TIME}"
     HUB_MODEL_ID=$(grep hub_model_id config.json | sed 's/.*"\(.*\)".*/\1/')
     TRACKER_PROJECT_NAME=$(grep tracker_project_name config.json | sed 's/.*"\(.*\)".*/\1/')
     TRACKER_RUN_NAME=$(grep tracker_run_name config.json | sed 's/.*"\(.*\)".*/\1/')
-    git tag "${GIT_TRAINING_TAG}" -m "Training of '${TRAINING_NAME}' started at ${START_TIMESTAMP}\nhub_model_id: ${HUB_MODEL_ID}\ntracker_project_name: ${TRACKER_PROJECT_NAME}\ntracker_run_name: ${TRACKER_RUN_NAME}" | tee -a "/var/log/portal/start.sh.log"
-    git push origin "${GIT_TRAINING_TAG}" | tee -a "/var/log/portal/start.sh.log"
+    git tag "${GIT_TRAINING_TAG}" \
+      -m "Training of '${TRAINING_NAME}' started at ${START_TIMESTAMP}" \
+      -m "hub_model_id: ${HUB_MODEL_ID}" \
+      -m "tracker_project_name: ${TRACKER_PROJECT_NAME}" \
+      -m "tracker_run_name: ${TRACKER_RUN_NAME}" 2>&1 | tee -a "/var/log/portal/start.sh.log"
+    git push origin "${GIT_TRAINING_TAG}" 2>&1 | tee -a "/var/log/portal/start.sh.log"
     export SIMPLETUNER_JOB_ID="${GIT_TRAINING_TAG}"
     simpletuner server $SSL_OPTION --env "${TRAINING_NAME}" --host 0.0.0.0 --port 8001 2>&1 | tee -a "/var/log/portal/simpletuner.log"
   else
