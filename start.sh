@@ -45,23 +45,23 @@ fi
 sed -i -E 's/#?PasswordAuthentication yes/PasswordAuthentication no/' /etc/ssh/sshd_config
 
 # Start SSH server
-service ssh start
+service ssh start | tee -a "/var/log/portal/start.sh.log"
 
-nvidia-smi
-echo "Version: ${SIMPLETUNER_VERSION}"
+nvidia-smi | tee -a "/var/log/portal/start.sh.log"
+echo "Version: ${SIMPLETUNER_VERSION}" | tee -a "/var/log/portal/start.sh.log"
 
 # Login to HF
 if [[ -n "${HF_TOKEN:-$HUGGING_FACE_HUB_TOKEN}" ]]; then
-  hf auth login --token "${HF_TOKEN:-$HUGGING_FACE_HUB_TOKEN}" --add-to-git-credential
+  hf auth login --token "${HF_TOKEN:-$HUGGING_FACE_HUB_TOKEN}" --add-to-git-credential | tee -a "/var/log/portal/start.sh.log"
 else
-  echo "HF_TOKEN or HUGGING_FACE_HUB_TOKEN not set; skipping login"
+  echo "HF_TOKEN or HUGGING_FACE_HUB_TOKEN not set; skipping login" | tee -a "/var/log/portal/start.sh.log"
 fi
 
 # Login to WanDB
 if [[ -n "${WANDB_API_KEY:-$WANDB_TOKEN}" ]]; then
-  wandb login "${WANDB_API_KEY:-$WANDB_TOKEN}"
+  wandb login "${WANDB_API_KEY:-$WANDB_TOKEN}" | tee -a "/var/log/portal/start.sh.log"
 else
-  echo "WANDB_API_KEY or WANDB_TOKEN not set; skipping login"
+  echo "WANDB_API_KEY or WANDB_TOKEN not set; skipping login" | tee -a "/var/log/portal/start.sh.log"
 fi
 
 # Create the accelerate default config
@@ -93,29 +93,29 @@ use_cpu: false
 EOL
 fi
 if [[ -v NO_DYNAMO ]]; then
-  echo "Dynamo disabled - removing it from accelerate config"
+  echo "Dynamo disabled - removing it from accelerate config" | tee -a "/var/log/portal/start.sh.log"
   sed -i "/dynamo/d" /workspace/huggingface/accelerate/default_config.yaml
 fi
 
 if [[ -v GIT_USER && -v GIT_PAT && -v GIT_REPOSITORY ]]; then
-  echo "Setting up GitHub based config"
+  echo "Setting up GitHub based config" | tee -a "/var/log/portal/start.sh.log"
+  pushd /workspace/simpletuner > /dev/null
+  git config --global user.email "${GIT_EMAIL:-you@example.com}" | tee -a "/var/log/portal/start.sh.log"
+  git config --global user.name "${GIT_USER}" | tee -a "/var/log/portal/start.sh.log"
   if [[ ! -e /workspace/simpletuner/config ]]; then
-    pushd /workspace/simpletuner > /dev/null
-    git config --global user.email "${GIT_EMAIL:-you@example.com}"
-    git config --global user.name "${GIT_USER}"
-    git clone --depth 1 "https://${GIT_USER}:${GIT_PAT}@github.com/${GIT_REPOSITORY}" config
-    popd > /dev/null
+    git clone --depth 1 "https://${GIT_USER}:${GIT_PAT}@github.com/${GIT_REPOSITORY}" config | tee -a "/var/log/portal/start.sh.log"
   else
     pushd /workspace/simpletuner/config > /dev/null
-    git reset --hard
-    git pull
+    git reset --hard | tee -a "/var/log/portal/start.sh.log"
+    git pull | tee -a "/var/log/portal/start.sh.log"
     popd > /dev/null
   fi
+  popd > /dev/null
 else
-  echo "ERROR: Git access not properly setup! All three environment variables are needed!"
-  echo "GIT_USER: '${GIT_USER}'"
-  echo "GIT_PAT: '${GIT_PAT}'"
-  echo "GIT_REPOSITORY: '${GIT_REPOSITORY}'"
+  echo "ERROR: Git access not properly setup! All three environment variables are needed!" | tee -a "/var/log/portal/start.sh.log"
+  echo "GIT_USER: '${GIT_USER}'" | tee -a "/var/log/portal/start.sh.log"
+  echo "GIT_PAT: '${GIT_PAT}'" | tee -a "/var/log/portal/start.sh.log"
+  echo "GIT_REPOSITORY: '${GIT_REPOSITORY}'" | tee -a "/var/log/portal/start.sh.log"
   exit
 fi
 
@@ -227,7 +227,7 @@ fi
 mkdir -p /var/log/portal/
 
 if [[ -v TRAINING_NAME && -e /workspace/simpletuner/config/$TRAINING_NAME/preparation.sh ]]; then
-  echo "running preparation for '${TRAINING_NAME}'"
+  echo "running preparation for '${TRAINING_NAME}'" | tee -a "/var/log/portal/start.sh.log"
   rm -f /var/log/portal/preparation.sh.log
   source "/workspace/simpletuner/config/${TRAINING_NAME}/preparation.sh" | tee -a "/var/log/portal/preparation.sh.log"
 fi
@@ -235,14 +235,14 @@ fi
 rm -f /var/log/portal/simpletuner.log
 source ${VENV_PATH}/bin/activate
 if [[ -v USE_SSL ]]; then
-  echo "Starting SimpleTuner server (with SSL)"
+  echo "Starting SimpleTuner server (with SSL)" | tee -a "/var/log/portal/start.sh.log"
   SSL_OPTION="--ssl"
 else
-  echo "Starting SimpleTuner server (without SSL)"
+  echo "Starting SimpleTuner server (without SSL)" | tee -a "/var/log/portal/start.sh.log"
   SSL_OPTION=""
 fi
 if [[ -v DIRECT_TRAINING ]]; then
-  echo "Configured to start training immediately"
+  echo "Configured to start training immediately" | tee -a "/var/log/portal/start.sh.log"
   if [[ -v TRAINING_NAME ]]; then
     echo ""
     cd "/workspace/simpletuner/config/${TRAINING_NAME}/"
@@ -250,8 +250,8 @@ if [[ -v DIRECT_TRAINING ]]; then
     HUB_MODEL_ID=$(grep hub_model_id config.json | sed 's/.*"\(.*\)".*/\1/')
     TRACKER_PROJECT_NAME=$(grep tracker_project_name config.json | sed 's/.*"\(.*\)".*/\1/')
     TRACKER_RUN_NAME=$(grep tracker_run_name config.json | sed 's/.*"\(.*\)".*/\1/')
-    git tag "${GIT_TRAINING_TAG}" -m "Training of '${TRAINING_NAME}' started at ${START_TIMESTAMP}\nhub_model_id: ${HUB_MODEL_ID}\ntracker_project_name: ${TRACKER_PROJECT_NAME}\ntracker_run_name: ${TRACKER_RUN_NAME}"
-    git push origin "${GIT_TRAINING_TAG}"
+    git tag "${GIT_TRAINING_TAG}" -m "Training of '${TRAINING_NAME}' started at ${START_TIMESTAMP}\nhub_model_id: ${HUB_MODEL_ID}\ntracker_project_name: ${TRACKER_PROJECT_NAME}\ntracker_run_name: ${TRACKER_RUN_NAME}" | tee -a "/var/log/portal/start.sh.log"
+    git push origin "${GIT_TRAINING_TAG}" | tee -a "/var/log/portal/start.sh.log"
     export SIMPLETUNER_JOB_ID="${GIT_TRAINING_TAG}"
     simpletuner server $SSL_OPTION --env "${TRAINING_NAME}" --host 0.0.0.0 --port 8001 2>&1 | tee -a "/var/log/portal/simpletuner.log"
   else
