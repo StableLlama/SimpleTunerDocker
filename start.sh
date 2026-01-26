@@ -247,7 +247,10 @@ if [[ -v DIRECT_TRAINING ]]; then
     echo ""
     cd "/workspace/simpletuner/config/${TRAINING_NAME}/"
     GIT_TRAINING_TAG="${TRAINING_NAME}_${START_TIME}"
-    git tag "${GIT_TRAINING_TAG}" -m "Training of '${TRAINING_NAME}' started at ${START_TIMESTAMP}"
+    HUB_MODEL_ID=$(grep hub_model_id config.json | sed 's/.*"\(.*\)".*/\1/')
+    TRACKER_PROJECT_NAME=$(grep tracker_project_name config.json | sed 's/.*"\(.*\)".*/\1/')
+    TRACKER_RUN_NAME=$(grep tracker_run_name config.json | sed 's/.*"\(.*\)".*/\1/')
+    git tag "${GIT_TRAINING_TAG}" -m "Training of '${TRAINING_NAME}' started at ${START_TIMESTAMP}\nhub_model_id: ${HUB_MODEL_ID}\ntracker_project_name: ${TRACKER_PROJECT_NAME}\ntracker_run_name: ${TRACKER_RUN_NAME}"
     git push origin "${GIT_TRAINING_TAG}"
     export SIMPLETUNER_JOB_ID="${GIT_TRAINING_TAG}"
     simpletuner server $SSL_OPTION --env "${TRAINING_NAME}" --host 0.0.0.0 --port 8001 2>&1 | tee -a "/var/log/portal/simpletuner.log"

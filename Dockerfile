@@ -115,8 +115,8 @@ ENV SIMPLETUNER_PLATFORM=cuda
 # === old way of installing: ===
 # Clone and install SimpleTuner
 # decide for branch "release" or "main" (possibly unstable)
-ENV SIMPLETUNER_BRANCH=release
-#ENV SIMPLETUNER_BRANCH=main
+#ENV SIMPLETUNER_BRANCH=release
+ENV SIMPLETUNER_BRANCH=main
 SHELL ["/bin/bash", "-c"]
 RUN echo "Installing SimpleTuner from Git " \
  && echo "export SIMPLETUNER_INSTALL_TYPE=git" >>/etc/rp_build_environment \
