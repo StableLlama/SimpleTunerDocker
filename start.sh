@@ -1,5 +1,9 @@
 #!/bin/bash
 
+#### temporary local overwrite of Docker environment variables:
+#export TRAINING_NAME=abc
+#
+
 cp /etc/rp_build_environment /etc/rp_environment
 # useful information
 # see also: https://github.com/bghira/SimpleTuner/blob/main/OPTIONS.md#environment-configuration-variables
@@ -18,7 +22,7 @@ printenv |
   grep -E '^RUNPOD_|^PATH=|^HF_HOME=|^HF_TOKEN=|^HUGGING_FACE_HUB_TOKEN=|^WANDB_API_KEY=|^WANDB_TOKEN=|^_=' |
   sed 's/^\(.*\)=\(.*\)$/export \1="\2"/' >>/etc/rp_environment
 
-echo "export SIMPLETUNER_VERSION='$(simpletuner --version 2>/dev/null | xargs)'" >>/etc/rp_environment
+echo "export SIMPLETUNER_VERSION='$(simpletuner --version 2>/dev/null | sed 's/\x1b\[[0-9;]*m//g' | xargs)'" >>/etc/rp_environment
 echo "export START_TIME=$(date -u +"%Y%m%d_%H%M%S")" >>/etc/rp_environment
 echo "export START_TIMESTAMP=$(date -u +"%Y-%m-%dT%H:%M:%S.%6N%:z")" >>/etc/rp_environment
 

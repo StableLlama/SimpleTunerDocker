@@ -64,8 +64,10 @@ RUN apt-get update -y \
   && echo 'source /etc/rp_environment' >> ~/.bashrc \
   && echo 'echo ""' >> ~/.bashrc \
   && echo 'echo "------------------------"' >> ~/.bashrc \
+  && echo 'echo "Live log of start.sh: /var/log/portal/start.sh.log"' >> ~/.bashrc \
+  && echo 'echo "Live log of preparation.sh: /var/log/portal/preparation.sh.log"' >> ~/.bashrc \
   && echo 'echo "Live log of SimpleTuner: /var/log/portal/simpletuner.log"' >> ~/.bashrc \
-  && echo 'echo "tail -n 9999 -f /var/log/portal/simpletuner.log"' >> ~/.bashrc \
+  && echo 'echo "tail -n 999 -f /var/log/portal/simpletuner.log"' >> ~/.bashrc \
   && echo 'echo "------------------------"' >> ~/.bashrc \
   && python${PYTHON_VERSION} -m venv ${VENV_PATH}
 
