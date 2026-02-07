@@ -251,16 +251,18 @@ if [[ -v DIRECT_TRAINING ]]; then
   if [[ -v TRAINING_NAME ]]; then
     echo "" | tee -a "/var/log/portal/start.sh.log"
     cd "/workspace/simpletuner/config/${TRAINING_NAME}/"
-    GIT_TRAINING_TAG="${TRAINING_NAME}_${START_TIME}"
-    HUB_MODEL_ID=$(grep hub_model_id config.json | sed 's/.*"\(.*\)".*/\1/')
-    TRACKER_PROJECT_NAME=$(grep tracker_project_name config.json | sed 's/.*"\(.*\)".*/\1/')
-    TRACKER_RUN_NAME=$(grep tracker_run_name config.json | sed 's/.*"\(.*\)".*/\1/')
+    export GIT_TRAINING_TAG="${TRAINING_NAME}_${START_TIME}"
+    export HUB_MODEL_ID=$(grep hub_model_id config.json | sed 's/.*"\(.*\)".*/\1/')
+    export TRACKER_PROJECT_NAME=$(grep tracker_project_name config.json | sed 's/.*"\(.*\)".*/\1/')
+    export TRACKER_RUN_NAME=$(grep tracker_run_name config.json | sed 's/.*"\(.*\)".*/\1/')
     git tag "${GIT_TRAINING_TAG}" \
       -m "Training of '${TRAINING_NAME}' started at ${START_TIMESTAMP}" \
       -m "hub_model_id: ${HUB_MODEL_ID}" \
       -m "tracker_project_name: ${TRACKER_PROJECT_NAME}" \
       -m "tracker_run_name: ${TRACKER_RUN_NAME}" 2>&1 | tee -a "/var/log/portal/start.sh.log"
     git push origin "${GIT_TRAINING_TAG}" 2>&1 | tee -a "/var/log/portal/start.sh.log"
+    export CONFIG_GIT_REV="$(git rev-parse HEAD)"
+    export CONFIG_GIT_REV_SHORT="$(git rev-parse --short HEAD)"
     export SIMPLETUNER_JOB_ID="${GIT_TRAINING_TAG}"
     simpletuner server $SSL_OPTION --env "${TRAINING_NAME}" --host 0.0.0.0 --port 8001 2>&1 | tee -a "/var/log/portal/simpletuner.log"
   else
