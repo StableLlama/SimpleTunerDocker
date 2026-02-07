@@ -119,6 +119,7 @@ ENV SIMPLETUNER_PLATFORM=cuda
 # decide for branch "release" or "main" (possibly unstable)
 #ENV SIMPLETUNER_BRANCH=release
 ENV SIMPLETUNER_BRANCH=main
+ENV SIMPLETUNER_BRANCH="feature/track-grad-absmax-separately-for-regularisation"
 SHELL ["/bin/bash", "-c"]
 RUN echo "Installing SimpleTuner from Git" \
  && echo "export SIMPLETUNER_INSTALL_TYPE=git" >>/etc/rp_build_environment \
@@ -127,7 +128,7 @@ RUN echo "Installing SimpleTuner from Git" \
  && echo "export SIMPLETUNER_GIT_REV=$(git rev-parse HEAD)" >>/etc/rp_build_environment \
  && echo "export SIMPLETUNER_GIT_REV_SHORT=$(git rev-parse --short HEAD)" >>/etc/rp_build_environment \
  #   ### TMP: try a PR \
- && git switch feature/track-grad-absmax-separately-for-regularisation \
+ # && git switch feature/track-grad-absmax-separately-for-regularisation \
  && export FORCE_CUDA=1 \
  && echo "Installing SimpleTuner" \
  && source ${VENV_PATH}/bin/activate \
