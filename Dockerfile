@@ -127,7 +127,7 @@ RUN echo "Installing SimpleTuner from Git" \
  && echo "export SIMPLETUNER_GIT_REV=$(git rev-parse HEAD)" >>/etc/rp_build_environment \
  && echo "export SIMPLETUNER_GIT_REV_SHORT=$(git rev-parse --short HEAD)" >>/etc/rp_build_environment \
  #   ### TMP: try a PR \
- #&& git switch feature/orchestrator-worker-discovery \
+ && git switch feature/track-grad-absmax-separately-for-regularisation \
  && export FORCE_CUDA=1 \
  && echo "Installing SimpleTuner" \
  && source ${VENV_PATH}/bin/activate \
