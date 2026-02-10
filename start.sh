@@ -8,6 +8,7 @@ cp /etc/rp_build_environment /etc/rp_environment
 # useful information
 # see also: https://github.com/bghira/SimpleTuner/blob/main/OPTIONS.md#environment-configuration-variables
 echo "export GPU_COUNT=$(nvidia-smi --list-gpus | wc -l)" >>/etc/rp_environment
+echo "export GPU_TYPE=$(nvidia-smi --list-gpus | head -n1 | sed 's/ (.*//' | sed 's/.*: //')" >>/etc/rp_environment
 echo "export DISABLE_UPDATES=true" >>/etc/rp_environment
 echo "export TRAINING_NUM_PROCESSES=$(nvidia-smi --list-gpus | wc -l)" >>/etc/rp_environment
 echo "export TRAINING_NUM_MACHINES=1" >>/etc/rp_environment
@@ -74,7 +75,6 @@ if [[ ! -e /workspace/huggingface/accelerate/default_config.yaml ]]; then
   cat >/workspace/huggingface/accelerate/default_config.yaml <<EOL
 compute_environment: LOCAL_MACHINE
 debug: false
-distributed_type: 'NO'
 downcast_bf16: 'no'
 dynamo_config:
   dynamo_backend: INDUCTOR
