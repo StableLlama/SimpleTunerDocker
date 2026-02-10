@@ -71,10 +71,16 @@ fi
 
 # Create the accelerate default config
 if [[ ! -e /workspace/huggingface/accelerate/default_config.yaml ]]; then
+  if [ "$GPU_COUNT" -le 1 ]; then
+      DISTRIBUTED_TYPE="NO"
+  else
+      DISTRIBUTED_TYPE="MULTI_GPU"
+  fi
   mkdir -p  /workspace/huggingface/accelerate
   cat >/workspace/huggingface/accelerate/default_config.yaml <<EOL
 compute_environment: LOCAL_MACHINE
 debug: false
+distributed_type: '${DISTRIBUTED_TYPE}'
 downcast_bf16: 'no'
 dynamo_config:
   dynamo_backend: INDUCTOR
@@ -86,8 +92,8 @@ gpu_ids: all
 machine_rank: 0
 main_training_function: main
 mixed_precision: bf16
-num_machines: $TRAINING_NUM_MACHINES
-num_processes: $TRAINING_NUM_PROCESSES
+num_machines: ${TRAINING_NUM_MACHINES}
+num_processes: ${TRAINING_NUM_PROCESSES}
 rdzv_backend: static
 same_network: true
 tpu_env: []
