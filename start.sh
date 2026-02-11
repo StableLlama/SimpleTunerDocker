@@ -7,10 +7,10 @@
 cp /etc/rp_build_environment /etc/rp_environment
 # useful information
 # see also: https://github.com/bghira/SimpleTuner/blob/main/OPTIONS.md#environment-configuration-variables
-echo "export GPU_COUNT=$(nvidia-smi --list-gpus | wc -l)" >>/etc/rp_environment
-echo "export GPU_TYPE=$(nvidia-smi --list-gpus | head -n1 | sed 's/ (.*//' | sed 's/.*: //')" >>/etc/rp_environment
+echo "export GPU_COUNT='$(nvidia-smi --list-gpus | wc -l)'" >>/etc/rp_environment
+echo "export GPU_TYPE='$(nvidia-smi --list-gpus | head -n1 | sed 's/ (.*//' | sed 's/.*: //')'" >>/etc/rp_environment
 echo "export DISABLE_UPDATES=true" >>/etc/rp_environment
-echo "export TRAINING_NUM_PROCESSES=$(nvidia-smi --list-gpus | wc -l)" >>/etc/rp_environment
+echo "export TRAINING_NUM_PROCESSES='$(nvidia-smi --list-gpus | wc -l)'" >>/etc/rp_environment
 echo "export TRAINING_NUM_MACHINES=1" >>/etc/rp_environment
 echo "export MIXED_PRECISION=bf16" >>/etc/rp_environment
 # for substantial speed improvements on NVIDIA hardware
@@ -20,7 +20,7 @@ echo "export TRAINING_DYNAMO_BACKEND=inductor" >>/etc/rp_environment
 # This file can then later be sourced in a login shell
 echo "Exporting environment variables..."
 printenv |
-  grep -E '^RUNPOD_|^PATH=|^HF_HOME=|^HF_TOKEN=|^HUGGING_FACE_HUB_TOKEN=|^WANDB_API_KEY=|^WANDB_TOKEN=|^_=' |
+  grep -E '^RUNPOD_|^PATH=|^HF_HOME=|^HF_TOKEN=|^HUGGING_FACE_HUB_TOKEN=|^WANDB_API_KEY=|^WANDB_TOKEN=' |
   sed 's/^\(.*\)=\(.*\)$/export \1="\2"/' >>/etc/rp_environment
 
 echo "export SIMPLETUNER_VERSION='$(simpletuner --version 2>/dev/null | sed 's/\x1b\[[0-9;]*m//g' | xargs)'" >>/etc/rp_environment
@@ -33,6 +33,16 @@ source /etc/rp_environment
 
 mkdir -p /var/log/portal/
 touch /var/log/portal/start.sh.log
+echo "Base container: ${BASE_CONTAINER}" | tee -a "/var/log/portal/simpletuner.log"
+echo "Container build: ${BUILD_TIMESTAMP}" | tee -a "/var/log/portal/simpletuner.log"
+echo "Python version: ${PYTHON_VERSION}" | tee -a "/var/log/portal/simpletuner.log"
+echo "SimpleTuner version: ${SIMPLETUNER_VERSION}" | tee -a "/var/log/portal/simpletuner.log"
+echo "SimpleTuner git rev: ${SIMPLETUNER_GIT_REV}" | tee -a "/var/log/portal/simpletuner.log"
+echo "SimpleTuner git rev short: ${SIMPLETUNER_GIT_REV_SHORT}" | tee -a "/var/log/portal/simpletuner.log"
+echo "GPUs:" | tee -a "/var/log/portal/simpletuner.log"
+nvidia-smi --list-gpus | tee -a "/var/log/portal/simpletuner.log"
+echo "Start timestamp: ${START_TIMESTAMP}" | tee -a "/var/log/portal/simpletuner.log"
+echo "Training name: '${TRAINING_NAME}'" | tee -a "/var/log/portal/simpletuner.log"
 
 # Vast.ai uses $SSH_PUBLIC_KEY
 if [[ $SSH_PUBLIC_KEY ]]; then
@@ -125,11 +135,13 @@ if [[ -v GIT_USER && -v GIT_PAT && -v GIT_REPOSITORY ]]; then
   fi
   popd > /dev/null
 else
-  echo "ERROR: Git access not properly setup! All three environment variables are needed!" | tee -a "/var/log/portal/start.sh.log"
-  echo "GIT_USER: '${GIT_USER}'" | tee -a "/var/log/portal/start.sh.log"
-  echo "GIT_PAT: '${GIT_PAT}'" | tee -a "/var/log/portal/start.sh.log"
-  echo "GIT_REPOSITORY: '${GIT_REPOSITORY}'" | tee -a "/var/log/portal/start.sh.log"
-  exit
+  if [[ -v DIRECT_TRAINING ]]; then
+    echo "ERROR: DIRECT_TRAINING active, but git access not properly setup! All three environment variables are needed!" | tee -a "/var/log/portal/start.sh.log"
+    echo "GIT_USER: '${GIT_USER}'" | tee -a "/var/log/portal/start.sh.log"
+    echo "GIT_PAT: '${GIT_PAT}'" | tee -a "/var/log/portal/start.sh.log"
+    echo "GIT_REPOSITORY: '${GIT_REPOSITORY}'" | tee -a "/var/log/portal/start.sh.log"
+    exit
+  fi
 fi
 
 # Setup the SimpleTuner onboarding config with the correct paths for this setup
@@ -273,6 +285,14 @@ if [[ -v DIRECT_TRAINING ]]; then
     export CONFIG_GIT_REV="$(git rev-parse HEAD)"
     export CONFIG_GIT_REV_SHORT="$(git rev-parse --short HEAD)"
     export SIMPLETUNER_JOB_ID="${GIT_TRAINING_TAG}"
+
+    echo "Git training tag: '${GIT_TRAINING_TAG}'" | tee -a "/var/log/portal/simpletuner.log"
+    echo "Hub model ID: '${HUB_MODEL_ID}'" | tee -a "/var/log/portal/simpletuner.log"
+    echo "Tracker project name: '${TRACKER_PROJECT_NAME}'" | tee -a "/var/log/portal/simpletuner.log"
+    echo "Tracker run name: '${TRACKER_RUN_NAME}'" | tee -a "/var/log/portal/simpletuner.log"
+    echo "Config Git revision: '${CONFIG_GIT_REV}'" | tee -a "/var/log/portal/simpletuner.log"
+    echo "Config Git revision (short): '${CONFIG_GIT_REV_SHORT}'" | tee -a "/var/log/portal/simpletuner.log"
+    echo "-----------------------" | tee -a "/var/log/portal/simpletuner.log"
     simpletuner server $SSL_OPTION --env "${TRAINING_NAME}" --host 0.0.0.0 --port 8001 2>&1 | tee -a "/var/log/portal/simpletuner.log"
   else
     echo "ERROR: TRAINING_NAME not set, please set it to define what should be trained!"

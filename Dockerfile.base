@@ -1,0 +1,90 @@
+ARG CUDA_VERSION=12.8.1
+ARG UBUNTU_VERSION=24.04
+FROM nvidia/cuda:${CUDA_VERSION}-cudnn-devel-ubuntu${UBUNTU_VERSION}
+
+# 8.9 = Ada
+ENV TORCH_CUDA_ARCH_LIST=8.9
+ENV CUDA_HOME=/usr/local/cuda
+ENV LIBRARY_PATH=$CUDA_HOME/targets/x86_64-linux/lib/stubs:$LIBRARY_PATH
+ENV LD_LIBRARY_PATH=$CUDA_HOME/lib64:$CUDA_HOME/targets/x86_64-linux/lib/stubs:$LD_LIBRARY_PATH
+
+ARG PYTHON_VERSION=3.13
+
+# Prevents different commands from being stuck by waiting
+# on user input during build
+ENV DEBIAN_FRONTEND=noninteractive
+
+# /workspace is a common volume for hosts like Runpod
+VOLUME /workspace
+
+# Set the working directory inside the container
+WORKDIR /app
+
+ENV VENV_PATH=/opt/venv
+RUN apt-get update -y \
+ && apt-get install -y --no-install-recommends \
+      build-essential \
+      ca-certificates \
+      openssh-server \
+      openssh-client \
+      git \
+      git-lfs \
+      wget \
+      curl \
+      tmux \
+      tldr \
+      nvtop \
+      vim \
+      rsync \
+      net-tools \
+      less \
+      iputils-ping \
+      7zip \
+      zip \
+      unzip \
+      htop \
+      inotify-tools \
+      libglib2.0-0 \
+      libopenmpi-dev \
+      openmpi-bin \
+      ffmpeg \
+      libsm6 \
+      libxext6 \
+      p7zip-full \
+      python${PYTHON_VERSION} \
+      python${PYTHON_VERSION}-dev \
+      python${PYTHON_VERSION}-venv \
+  && curl https://rclone.org/install.sh | bash \
+  && git config --global credential.helper store \
+  && git lfs install \
+  && rm -rf /var/lib/apt/lists/* \
+  && touch /etc/rp_environment \
+  && echo "export BASE_CONTAINER='nvidia/cuda:${CUDA_VERSION}-cudnn-devel-ubuntu${UBUNTU_VERSION}'" >> /etc/rp_environment \
+  && echo "export PYTHON_VERSION=${PYTHON_VERSION}" >> /etc/rp_environment \
+  && echo 'source /etc/rp_environment' >> ~/.bashrc \
+  && echo 'echo ""' >> ~/.bashrc \
+  && echo 'echo "------------------------"' >> ~/.bashrc \
+  && echo 'echo "Live log of start.sh: /var/log/portal/start.sh.log"' >> ~/.bashrc \
+  && echo 'echo "Live log of preparation.sh: /var/log/portal/preparation.sh.log"' >> ~/.bashrc \
+  && echo 'echo "Live log of SimpleTuner: /var/log/portal/simpletuner.log"' >> ~/.bashrc \
+  && echo 'echo "tail -n 999 -f /var/log/portal/simpletuner.log"' >> ~/.bashrc \
+  && echo 'echo "------------------------"' >> ~/.bashrc \
+  && python${PYTHON_VERSION} -m venv ${VENV_PATH}
+
+ENV PATH="${VENV_PATH}/bin:${PATH}"
+ENV HF_HOME=/workspace/huggingface
+
+RUN (PIP_ROOT_USER_ACTION=ignore; /opt/venv/bin/pip install --upgrade pip setuptools wheel \
+ && pip install --no-cache-dir \
+      "huggingface_hub[cli,hf_transfer]" \
+      wandb  \
+      poetry \
+      mpi4py \
+
+# ----- new RUN for new layer to keep the above stable and frozen -----
+
+# NOTE: Disabled, as it's currently too big to build on GitHub
+#RUN --mount=type=secret,id=HF_TOKEN,env=HF_TOKEN \
+#    huggingface-cli login --token $HF_TOKEN \
+# && HF_HUB_ENABLE_HF_TRANSFER=1 huggingface-cli download black-forest-labs/FLUX.1-dev --local-dir /app/FLUX.1-dev
+# && HF_HUB_ENABLE_HF_TRANSFER=1 huggingface-cli download stablellama/TEST --local-dir /app/FLUX.1-dev
