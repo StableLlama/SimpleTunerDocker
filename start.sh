@@ -31,6 +31,9 @@ echo "export START_TIMESTAMP=$(date -u +"%Y-%m-%dT%H:%M:%S.%6N%:z")" >>/etc/rp_e
 grep -qxF 'source /etc/rp_environment' ~/.bashrc || echo 'source /etc/rp_environment' >>~/.bashrc
 source /etc/rp_environment
 
+mkdir -p /var/log/portal/
+touch /var/log/portal/start.sh.log
+
 # Vast.ai uses $SSH_PUBLIC_KEY
 if [[ $SSH_PUBLIC_KEY ]]; then
   echo "INFO: Found SSH_PUBLIC_KEY, using it as PUBLIC_KEY" | tee -a "/var/log/portal/start.sh.log"

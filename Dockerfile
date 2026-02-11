@@ -134,6 +134,8 @@ RUN echo "Installing SimpleTuner from Git" \
  && echo "Installing SimpleTuner" \
  && source ${VENV_PATH}/bin/activate \
  && pip install --no-cache-dir -e .[cuda,jxl] \
+ #   ### TMP: try to fix, according to https://github.com/huggingface/diffusers/issues/13104#issuecomment-3881255236 \
+ && pip install -U git+https://github.com/huggingface/diffusers@main \
  && echo "Installing SageAttention" \
  && pip install --no-build-isolation --no-cache-dir sageattention==1.0.6 \
  && echo "Installing finished" \
