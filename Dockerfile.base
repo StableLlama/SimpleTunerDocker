@@ -8,7 +8,7 @@ ENV CUDA_HOME=/usr/local/cuda
 ENV LIBRARY_PATH=$CUDA_HOME/targets/x86_64-linux/lib/stubs:$LIBRARY_PATH
 ENV LD_LIBRARY_PATH=$CUDA_HOME/lib64:$CUDA_HOME/targets/x86_64-linux/lib/stubs:$LD_LIBRARY_PATH
 
-ARG PYTHON_VERSION=3.13
+ARG PYTHON_VERSION=3.12
 
 # Prevents different commands from being stuck by waiting
 # on user input during build
