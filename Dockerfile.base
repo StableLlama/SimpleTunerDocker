@@ -80,6 +80,7 @@ RUN (PIP_ROOT_USER_ACTION=ignore; /opt/venv/bin/pip install --upgrade pip setupt
       wandb  \
       poetry \
       mpi4py \
+ && pip cache purge)
 
 # ----- new RUN for new layer to keep the above stable and frozen -----
 
