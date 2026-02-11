@@ -6,7 +6,7 @@ ARG CUDA_VERSION=12.8.1
 WORKDIR /app
 
 RUN mkdir -p /workspace/simpletuner \
- && echo "export BUILD_TIMESTAMP='$(date -u +"%Y-%m-%dT%H:%M:%S.%6N%:z")'" >/etc/rp_build_environment
+ && echo "export CONTAINER_BUILD_TIMESTAMP='$(date -u +"%Y-%m-%dT%H:%M:%S.%6N%:z")'" >/etc/rp_build_environment
 ENV SIMPLETUNER_WORKSPACE=/workspace/simpletuner
 
 # === new way of installing: ===

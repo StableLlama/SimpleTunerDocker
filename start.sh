@@ -33,8 +33,9 @@ source /etc/rp_environment
 
 mkdir -p /var/log/portal/
 touch /var/log/portal/start.sh.log
-echo "Base container: ${BASE_CONTAINER}" | tee -a "/var/log/portal/simpletuner.log"
-echo "Container build: ${BUILD_TIMESTAMP}" | tee -a "/var/log/portal/simpletuner.log"
+echo "Base container: ${BASE_CONTAINER_FROM}" | tee -a "/var/log/portal/simpletuner.log"
+echo "Base container build timestamp: ${BASE_CONTAINER_BUILD_TIMESTAMP}" | tee -a "/var/log/portal/simpletuner.log"
+echo "Container build timestamp: ${CONTAINER_BUILD_TIMESTAMP}" | tee -a "/var/log/portal/simpletuner.log"
 echo "Python version: ${PYTHON_VERSION}" | tee -a "/var/log/portal/simpletuner.log"
 echo "SimpleTuner version: ${SIMPLETUNER_VERSION}" | tee -a "/var/log/portal/simpletuner.log"
 echo "SimpleTuner git rev: ${SIMPLETUNER_GIT_REV}" | tee -a "/var/log/portal/simpletuner.log"

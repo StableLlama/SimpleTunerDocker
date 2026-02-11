@@ -59,7 +59,8 @@ RUN apt-get update -y \
   && git lfs install \
   && rm -rf /var/lib/apt/lists/* \
   && touch /etc/rp_environment \
-  && echo "export BASE_CONTAINER='nvidia/cuda:${CUDA_VERSION}-cudnn-devel-ubuntu${UBUNTU_VERSION}'" >> /etc/rp_environment \
+  && echo "export BASE_CONTAINER_BUILD_TIMESTAMP='$(date -u +"%Y-%m-%dT%H:%M:%S.%6N%:z")'" >> /etc/rp_environment \
+  && echo "export BASE_CONTAINER_FROM='nvidia/cuda:${CUDA_VERSION}-cudnn-devel-ubuntu${UBUNTU_VERSION}'" >> /etc/rp_environment \
   && echo "export PYTHON_VERSION=${PYTHON_VERSION}" >> /etc/rp_environment \
   && echo 'source /etc/rp_environment' >> ~/.bashrc \
   && echo 'echo ""' >> ~/.bashrc \
