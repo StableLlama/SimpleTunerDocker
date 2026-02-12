@@ -17,7 +17,8 @@ jobs:
       - id: set-matrix
         run: |
           # Define CUDA versions here. The last one will get the 'latest' tag.
-          VERSIONS='["12.8.1", "13.0.1", "13.1.1"]'
+          # See also: https://gitlab.com/nvidia/container-images/cuda/-/blob/master/doc/supported-tags.md?ref_type=heads
+          VERSIONS='["12.8.1", "13.0.2", "13.1.1"]'
           echo "matrix=$VERSIONS" >> $GITHUB_OUTPUT
           echo "latest=$(echo $VERSIONS | jq -r '.[-1]')" >> $GITHUB_OUTPUT
 
