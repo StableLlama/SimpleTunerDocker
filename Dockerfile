@@ -25,8 +25,8 @@ ENV SIMPLETUNER_PLATFORM=cuda
 # === old way of installing: ===
 # Clone and install SimpleTuner
 # decide for branch "release" or "main" (possibly unstable)
-ENV SIMPLETUNER_BRANCH=release
-#ENV SIMPLETUNER_BRANCH=main
+#ENV SIMPLETUNER_BRANCH=release
+ENV SIMPLETUNER_BRANCH=main
 ### TMP: try a PR \
 #ENV SIMPLETUNER_BRANCH="feature/track-grad-absmax-separately-for-regularisation"
 SHELL ["/bin/bash", "-c"]
