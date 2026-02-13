@@ -13,14 +13,85 @@ jobs:
     outputs:
       cuda_versions: ${{ steps.set-matrix.outputs.matrix }}
       latest_cuda: ${{ steps.set-matrix.outputs.latest }}
+      base_changed: ${{ steps.set-matrix.outputs.base_changed }}
     steps:
+      - name: Checkout code
+        uses: actions/checkout@v3
+        with:
+          fetch-depth: 0
+
       - id: set-matrix
+        env:
+          BASE_SHA: ${{ github.event.pull_request.base.sha || github.event.before }}
         run: |
           # Define CUDA versions here. The last one will get the 'latest' tag.
           # See also: https://gitlab.com/nvidia/container-images/cuda/-/blob/master/doc/supported-tags.md?ref_type=heads
           VERSIONS='["12.8.1", "13.0.2", "13.1.1"]'
-          echo "matrix=$VERSIONS" >> $GITHUB_OUTPUT
-          echo "latest=$(echo $VERSIONS | jq -r '.[-1]')" >> $GITHUB_OUTPUT
+
+          python - <<'PY'
+          import json
+          import os
+          import re
+          import subprocess
+          from pathlib import Path
+
+          file_path = ".github/workflows/docker-build.yml"
+
+          def extract_versions(text: str) -> list[str]:
+            match = re.search(r"VERSIONS='(\[[^']*\])'", text)
+            if not match:
+              return []
+            return json.loads(match.group(1))
+
+          current_text = Path(file_path).read_text()
+          current_versions = extract_versions(current_text)
+
+          base_sha = os.environ.get("BASE_SHA", "").strip()
+          if base_sha == "0000000000000000000000000000000000000000":
+            base_sha = ""
+
+          prev_versions: list[str] = []
+          diff_files: list[str] = []
+
+          if base_sha:
+            try:
+              prev_text = subprocess.check_output(
+                ["git", "show", f"{base_sha}:{file_path}"],
+                text=True,
+              )
+              prev_versions = extract_versions(prev_text)
+            except subprocess.CalledProcessError:
+              prev_versions = []
+
+            diff_files = subprocess.check_output(
+              ["git", "diff", "--name-only", f"{base_sha}...HEAD"],
+              text=True,
+            ).splitlines()
+
+          only_workflow_changed = bool(diff_files) and all(
+            name == file_path for name in diff_files
+          )
+
+          new_versions = [v for v in current_versions if v not in prev_versions]
+          if only_workflow_changed:
+            selected_versions = new_versions
+          else:
+            selected_versions = current_versions
+
+          matrix = [
+            {"cuda_version": v, "is_new": v in new_versions}
+            for v in selected_versions
+          ]
+
+          base_changed = "true" if "Dockerfile.base" in diff_files else "false"
+
+          output_lines = [
+            f"matrix={json.dumps(matrix)}",
+            f"latest={(current_versions[-1] if current_versions else '')}",
+            f"base_changed={base_changed}",
+          ]
+          Path(os.environ["GITHUB_OUTPUT"]).write_text("\n".join(output_lines))
+          PY
 
   build:
     needs: prepare
@@ -28,7 +99,7 @@ jobs:
     strategy:
       fail-fast: false
       matrix:
-        cuda_version: ${{ fromJson(needs.prepare.outputs.cuda_versions) }}
+        include: ${{ fromJson(needs.prepare.outputs.cuda_versions) }}
     steps:
       - name: Free up disk space
         run: |
@@ -55,6 +126,7 @@ jobs:
         run: echo "ts=$(date -u +'%Y%m%d-%H%M')" >> $GITHUB_OUTPUT
 
       - name: Build and push Base Image
+        if: ${{ needs.prepare.outputs.base_changed == 'true' || matrix.is_new == true }}
         uses: docker/build-push-action@v4
         with:
           context: .
