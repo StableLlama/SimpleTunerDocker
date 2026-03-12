@@ -55,9 +55,9 @@ fi
 if [[ $PUBLIC_KEY ]]; then
   echo "INFO: Setting up SSH, adding PUBLIC_KEY to authorized_keys" | tee -a "/var/log/portal/start.sh.log"
   mkdir -p ~/.ssh
-  chmod 700 ~/.ssh
   echo "${PUBLIC_KEY}" >>~/.ssh/authorized_keys
-  chmod 700 -R ~/.ssh
+  chmod 600 ~/.ssh/authorized_keys
+  chmod 700 ~/.ssh
 fi
 
 # disable SSH password login - use key instead!
@@ -259,7 +259,7 @@ if [[ -v TRAINING_NAME && -e /workspace/simpletuner/config/$TRAINING_NAME/prepar
 fi
 
 rm -f /var/log/portal/simpletuner.log
-rm -f /workspace/simpletuner/config/cloud
+rm -rf /workspace/simpletuner/config/cloud
 source ${VENV_PATH}/bin/activate
 if [[ -v USE_SSL ]]; then
   echo "Starting SimpleTuner server (with SSL)" | tee -a "/var/log/portal/start.sh.log"
