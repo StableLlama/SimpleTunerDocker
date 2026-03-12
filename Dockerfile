@@ -32,7 +32,9 @@ ENV SIMPLETUNER_BRANCH=main
 SHELL ["/bin/bash", "-c"]
 RUN echo "Installing SimpleTuner from Git" \
  && echo "export SIMPLETUNER_INSTALL_TYPE=git" >>/etc/rp_build_environment \
- && git clone --depth 1 https://github.com/bghira/SimpleTuner --branch $SIMPLETUNER_BRANCH \
+ # TMP: Try the ortho LoRA training branch \
+ # && git clone --depth 1 https://github.com/bghira/SimpleTuner --branch $SIMPLETUNER_BRANCH \
+ && git clone --depth 1 https://github.com/kaibioinfo/SimpleTuner --branch ortho \
  && cd SimpleTuner \
  && echo "SimpleTuner git branch: $SIMPLETUNER_BRANCH" \
  && echo "SimpleTuner git rev: $(git rev-parse HEAD)" \
