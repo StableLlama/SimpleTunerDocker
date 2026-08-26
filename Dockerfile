@@ -1,6 +1,8 @@
-ARG BASE_IMAGE=simpletuner-base:cuda12.8.1
+#ARG BASE_IMAGE=simpletuner-base:cuda12.8.1
+ARG BASE_IMAGE=simpletuner-base:cuda13.0.3
 FROM ${BASE_IMAGE}
-ARG CUDA_VERSION=12.8.1
+#ARG CUDA_VERSION=12.8.1
+ARG CUDA_VERSION=13.0.3
 
 # Set the working directory inside the container
 WORKDIR /app
@@ -33,8 +35,8 @@ SHELL ["/bin/bash", "-c"]
 RUN echo "Installing SimpleTuner from Git" \
  && echo "export SIMPLETUNER_INSTALL_TYPE=git" >>/etc/rp_build_environment \
  # TMP: Try the ortho LoRA training branch \
- # && git clone --depth 1 https://github.com/bghira/SimpleTuner --branch $SIMPLETUNER_BRANCH \
- && git clone --depth 1 https://github.com/kaibioinfo/SimpleTuner --branch ortho \
+ && git clone --depth 1 https://github.com/bghira/SimpleTuner --branch $SIMPLETUNER_BRANCH \
+ # && git clone --depth 1 https://github.com/kaibioinfo/SimpleTuner --branch ortho \
  && cd SimpleTuner \
  && echo "SimpleTuner git branch: $SIMPLETUNER_BRANCH" \
  && echo "SimpleTuner git rev: $(git rev-parse HEAD)" \
@@ -59,7 +61,7 @@ RUN echo "Installing SimpleTuner from Git" \
  && pip install --no-build-isolation --no-cache-dir sageattention==1.0.6 \
  && echo "Installing finished" \
  && pip cache purge \
- && rm -rf /root/.cache 
+ && rm -rf /root/.cache
 
 # test FA install:
 #RUN cd SimpleTuner && source .venv/bin/activate \
