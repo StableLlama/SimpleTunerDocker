@@ -33,7 +33,7 @@ jobs:
         run: |
           # Define CUDA versions here. The last one will get the 'latest' tag.
           # See also: https://gitlab.com/nvidia/container-images/cuda/-/blob/master/doc/supported-tags.md?ref_type=heads
-          VERSIONS='["12.8.2", "13.0.3", "13.1.2", "13.3.1"]'
+          VERSIONS='["12.8.1", "13.0.3", "13.1.2", "13.3.1"]'
 
           python - <<'PY'
           import json
