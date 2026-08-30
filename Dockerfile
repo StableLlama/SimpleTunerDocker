@@ -57,6 +57,8 @@ RUN echo "Installing SimpleTuner from Git" \
       EXTRA_INDEX_URL=""; \
     fi \
  && pip install --no-cache-dir -e .$EXTRA_OPTIONS $EXTRA_INDEX_URL \
+ && echo "Installing CuTeDSL operators dependencies" \
+ && pip install --no-build-isolation --no-cache-dir nvidia-cutlass-dsl apache-tvm-ffi \
  && echo "Installing SageAttention" \
  && pip install --no-build-isolation --no-cache-dir sageattention==1.0.6 \
  && echo "Installing finished" \
