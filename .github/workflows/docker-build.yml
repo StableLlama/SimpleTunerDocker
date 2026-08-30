@@ -19,6 +19,7 @@ jobs:
       cuda_versions: ${{ steps.set-matrix.outputs.matrix }}
       latest_cuda: ${{ steps.set-matrix.outputs.latest }}
       base_changed: ${{ steps.set-matrix.outputs.base_changed }}
+      any_new: ${{ steps.set-matrix.outputs.any_new }}
     steps:
       - name: Checkout code
         uses: actions/checkout@v3
@@ -95,6 +96,8 @@ jobs:
 
             base_changed = "true" if "Dockerfile.base" in diff_files else "false"
 
+          any_new = "true" if new_versions else "false"
+
           matrix = [
             {"cuda_version": v, "is_new": v in new_versions}
             for v in selected_versions
@@ -104,6 +107,7 @@ jobs:
             f"matrix={json.dumps(matrix)}",
             f"latest={(current_versions[-1] if current_versions else '')}",
             f"base_changed={base_changed}",
+            f"any_new={any_new}",
           ]
           Path(os.environ["GITHUB_OUTPUT"]).write_text("\n".join(output_lines))
           PY
@@ -111,7 +115,13 @@ jobs:
   build-base:
     needs: prepare
     runs-on: ubuntu-latest
-    if: ${{ needs.prepare.outputs.cuda_versions != '[]' }}
+    # Only build the base images when they actually need rebuilding:
+    #   - Dockerfile.base changed (push), or
+    #   - 'Force rebuild base images?' is checked (workflow_dispatch), or
+    #   - a CUDA version was added that has no base image yet (is_new).
+    # Otherwise the whole job is skipped, so existing base images (and their
+    # cached layers) are reused by the final build.
+    if: ${{ needs.prepare.outputs.base_changed == 'true' || needs.prepare.outputs.any_new == 'true' }}
     strategy:
       fail-fast: false
       matrix:
@@ -153,7 +163,10 @@ jobs:
   build-final:
     needs: [prepare, build-base]
     runs-on: ubuntu-latest
-    if: ${{ needs.prepare.outputs.cuda_versions != '[]' }}
+    # build-base is skipped when nothing needs rebuilding; the final images
+    # should still be built in that case (reusing the existing base images
+    # from Docker Hub). Only skip when the base build actually failed.
+    if: ${{ needs.prepare.outputs.cuda_versions != '[]' && (needs.build-base.result == 'success' || needs.build-base.result == 'skipped') }}
     strategy:
       fail-fast: false
       matrix:
