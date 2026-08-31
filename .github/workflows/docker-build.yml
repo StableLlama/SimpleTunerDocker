@@ -164,9 +164,11 @@ jobs:
     needs: [prepare, build-base]
     runs-on: ubuntu-latest
     # build-base is skipped when nothing needs rebuilding; the final images
-    # should still be built in that case (reusing the existing base images
-    # from Docker Hub). Only skip when the base build actually failed.
-    if: ${{ needs.prepare.outputs.cuda_versions != '[]' && (needs.build-base.result == 'success' || needs.build-base.result == 'skipped') }}
+    # must still be built then (reusing the existing base images from Docker
+    # Hub). `!cancelled()` is required: without a status-check function a job
+    # is auto-skipped when one of its `needs` was skipped. The extra guards
+    # keep us from building when prepare failed or the base build failed.
+    if: ${{ !cancelled() && needs.prepare.result == 'success' && needs.prepare.outputs.cuda_versions != '[]' && needs.build-base.result != 'failure' }}
     strategy:
       fail-fast: false
       matrix:
