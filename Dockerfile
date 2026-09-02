@@ -79,7 +79,8 @@ COPY --chmod=755 start.sh /start.sh
 
 # Ensure SSH access
 EXPOSE 22/tcp
-# WebUI
-EXPOSE 8001/tcp
+# WebUI - protected by caddy reverse proxy with authentication
+#  -> set WEB_USER and WEB_PASSWORD
+EXPOSE 8000/tcp
 
 ENTRYPOINT [ "/start.sh" ]

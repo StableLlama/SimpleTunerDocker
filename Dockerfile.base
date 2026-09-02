@@ -1,4 +1,4 @@
-#ARG CUDA_VERSION=12.8.1
+# ARG CUDA_VERSION=12.8.1
 ARG CUDA_VERSION=13.0.3
 ARG UBUNTU_VERSION=24.04
 FROM nvidia/cuda:${CUDA_VERSION}-cudnn-devel-ubuntu${UBUNTU_VERSION}
@@ -22,8 +22,11 @@ VOLUME /workspace
 WORKDIR /app
 
 ENV VENV_PATH=/opt/venv
-RUN apt-get update -y \
+RUN curl -1sLF 'https://dl.cloudsmith.io/public/caddy/stable/gpg.key' | gpg --dearmor -o /usr/share/keyrings/caddy-stable-archive-keyring.gpg \
+ && curl -1sLF 'https://dl.cloudsmith.io/public/caddy/stable/debian.deb.txt' | tee /etc/apt/sources.list.d/caddy-stable.list \
+ && apt-get update -y \
  && apt-get install -y --no-install-recommends \
+      caddy \
       build-essential \
       ca-certificates \
       openssh-server \
