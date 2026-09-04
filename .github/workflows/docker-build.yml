@@ -22,7 +22,7 @@ jobs:
       any_new: ${{ steps.set-matrix.outputs.any_new }}
     steps:
       - name: Checkout code
-        uses: actions/checkout@v3
+        uses: actions/checkout@v7
         with:
           fetch-depth: 0
 
@@ -136,20 +136,20 @@ jobs:
           df -h
 
       - name: Checkout code
-        uses: actions/checkout@v3
+        uses: actions/checkout@v7
 
       - name: Set up Docker Buildx
-        uses: docker/setup-buildx-action@v2
+        uses: docker/setup-buildx-action@v4
 
       - name: Login to Docker Hub
-        uses: docker/login-action@v2
+        uses: docker/login-action@v4
         with:
           username: ${{ secrets.DOCKER_USERNAME }}
           password: ${{ secrets.DOCKER_PASSWORD }}
 
       - name: Build and push Base Image
         if: ${{ needs.prepare.outputs.base_changed == 'true' || matrix.is_new == true }}
-        uses: docker/build-push-action@v4
+        uses: docker/build-push-action@v7
         with:
           context: .
           file: ./Dockerfile.base
@@ -183,13 +183,13 @@ jobs:
           df -h
 
       - name: Checkout code
-        uses: actions/checkout@v3
+        uses: actions/checkout@v7
 
       - name: Set up Docker Buildx
-        uses: docker/setup-buildx-action@v2
+        uses: docker/setup-buildx-action@v4
 
       - name: Login to Docker Hub
-        uses: docker/login-action@v2
+        uses: docker/login-action@v4
         with:
           username: ${{ secrets.DOCKER_USERNAME }}
           password: ${{ secrets.DOCKER_PASSWORD }}
@@ -199,7 +199,7 @@ jobs:
         run: echo "ts=$(date -u +'%Y%m%d-%H%M')" >> $GITHUB_OUTPUT
 
       - name: Build and push Final Image
-        uses: docker/build-push-action@v4
+        uses: docker/build-push-action@v7
         with:
           context: .
           file: ./Dockerfile
