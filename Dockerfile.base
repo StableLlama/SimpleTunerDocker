@@ -58,10 +58,10 @@ RUN apt-get update -y \
   && curl https://rclone.org/install.sh | bash \
   && git config --global credential.helper store \
   && git lfs install \
-  && curl -1sLF 'https://dl.cloudsmith.io/public/caddy/stable/gpg.key' | gpg --dearmor -o /usr/share/keyrings/caddy-stable-archive-keyring.gpg \
-  && curl -1sLF 'https://dl.cloudsmith.io/public/caddy/stable/debian.deb.txt' | tee /etc/apt/sources.list.d/caddy-stable.list \
-  && apt-get install -y --no-install-recommends \
-      caddy \
+#  && curl -1sLF 'https://dl.cloudsmith.io/public/caddy/stable/gpg.key' | gpg --dearmor -o /usr/share/keyrings/caddy-stable-archive-keyring.gpg \
+#  && curl -1sLF 'https://dl.cloudsmith.io/public/caddy/stable/debian.deb.txt' | tee /etc/apt/sources.list.d/caddy-stable.list \
+#  && apt-get install -y --no-install-recommends \
+#      caddy \
   && rm -rf /var/lib/apt/lists/* \
   && touch /etc/rp_build_environment \
   && echo "export BASE_CONTAINER_BUILD_TIMESTAMP='$(date -u +"%Y-%m-%dT%H:%M:%S.%6N%:z")'" >> /etc/rp_build_environment \
