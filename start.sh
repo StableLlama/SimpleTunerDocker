@@ -70,21 +70,21 @@ service ssh start 2>&1 | tee -a "/var/log/portal/start.sh.log"
 WEB_USER=${WEB_USER:-"admin"}
 WEB_PASSWORD=${WEB_PASSWORD:-"simpletuner123"}
 
-# # Generate Caddy password hash
-# HASHED_PASSWORD=$(caddy hash-password --plaintext "$WEB_PASSWORD")
+# Generate Caddy password hash
+HASHED_PASSWORD=$(caddy hash-password --plaintext "$WEB_PASSWORD")
 
-# # Create dynamic Caddyfile
-# cat <<EOF > /etc/caddy/Caddyfile
-# :8000 {
-#     basic_auth {
-#         $WEB_USER $HASHED_PASSWORD
-#     }
-#     reverse_proxy 127.0.0.1:8001
-# }
-# EOF
+# Create dynamic Caddyfile
+cat <<EOF > /etc/caddy/Caddyfile
+:8000 {
+    basic_auth {
+        $WEB_USER $HASHED_PASSWORD
+    }
+    reverse_proxy 127.0.0.1:8001
+}
+EOF
 
-# # Start Caddy in the background
-# caddy start --config /etc/caddy/Caddyfile | tee -a "/var/log/portal/start.sh.log"
+# Start Caddy in the background
+caddy start --config /etc/caddy/Caddyfile | tee -a "/var/log/portal/start.sh.log"
 
 nvidia-smi | tee -a "/var/log/portal/start.sh.log"
 echo "Version: ${SIMPLETUNER_VERSION}" | tee -a "/var/log/portal/start.sh.log"
