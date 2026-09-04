@@ -24,7 +24,6 @@ WORKDIR /app
 ENV VENV_PATH=/opt/venv
 RUN apt-get update -y \
  && apt-get install -y --no-install-recommends \
-      caddy \
       build-essential \
       ca-certificates \
       openssh-server \
@@ -61,7 +60,7 @@ RUN apt-get update -y \
   && git lfs install \
   && curl -1sLF 'https://dl.cloudsmith.io/public/caddy/stable/gpg.key' | gpg --dearmor -o /usr/share/keyrings/caddy-stable-archive-keyring.gpg \
   && curl -1sLF 'https://dl.cloudsmith.io/public/caddy/stable/debian.deb.txt' | tee /etc/apt/sources.list.d/caddy-stable.list \
-  &&  && apt-get install -y --no-install-recommends \
+  && apt-get install -y --no-install-recommends \
       caddy \
   && rm -rf /var/lib/apt/lists/* \
   && touch /etc/rp_build_environment \
