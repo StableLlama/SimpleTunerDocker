@@ -20,7 +20,7 @@ echo "export TRAINING_DYNAMO_BACKEND=inductor" >>/etc/rp_environment
 # This file can then later be sourced in a login shell
 echo "Exporting environment variables..."
 printenv |
-  grep -E '^RUNPOD_|^PATH=|^HF_HOME=|^HF_TOKEN=|^HUGGING_FACE_HUB_TOKEN=|^WANDB_API_KEY=|^WANDB_TOKEN=' |
+  grep -E '^RUNPOD_|^PATH=|^HF_HOME=|^HF_TOKEN=|^HUGGING_FACE_HUB_TOKEN=|^WANDB_API_KEY=|^WANDB_TOKEN=|^OPEN_BUTTON_TOKEN=|^JUPYTER_TOKEN=|^VAST_CONTAINERLABEL=|^CONTAINER_ID=' |
   sed 's/^\(.*\)=\(.*\)$/export \1="\2"/' >>/etc/rp_environment
 
 echo "export SIMPLETUNER_VERSION='$(simpletuner --version 2>/dev/null | sed 's/\x1b\[[0-9;]*m//g' | xargs)'" >>/etc/rp_environment
@@ -70,21 +70,88 @@ service ssh start 2>&1 | tee -a "/var/log/portal/start.sh.log"
 WEB_USER=${WEB_USER:-"admin"}
 WEB_PASSWORD=${WEB_PASSWORD:-"simpletuner123"}
 
+# Vast.ai appends the per-instance token to the URL ("?token=<value>") when its
+# "Open" button is used, and injects that token into the container as
+# OPEN_BUTTON_TOKEN (older instances: VAST_CONTAINERLABEL + JUPYTER_TOKEN).
+# OPEN_BUTTON_TOKEN / VAST_CONTAINERLABEL are Vast-specific and unset on other
+# providers (e.g. RunPod), so token authentication is ONLY armed when a Vast
+# signal is present. Everywhere else the container behaves exactly as before:
+# plain HTTP basic auth via WEB_USER / WEB_PASSWORD.
+VAST_OPEN_TOKEN="${OPEN_BUTTON_TOKEN:-}"
+if [[ -z "${VAST_OPEN_TOKEN}" && -n "${VAST_CONTAINERLABEL:-}" ]]; then
+  # Vast instance without OPEN_BUTTON_TOKEN: JUPYTER_TOKEN carries the same value
+  VAST_OPEN_TOKEN="${JUPYTER_TOKEN:-}"
+fi
+AUTH_COOKIE="${VAST_CONTAINERLABEL:-simpletuner}_auth_token"
+
 # Generate Caddy password hash
 HASHED_PASSWORD=$(caddy hash-password --plaintext "$WEB_PASSWORD")
 
 # Create dynamic Caddyfile
-cat <<EOF > /etc/caddy/Caddyfile
-:8000 {
-    basicauth {
-        $WEB_USER $HASHED_PASSWORD
-    }
-    reverse_proxy 127.0.0.1:8001
-}
-EOF
+{
+  echo ":8000 {"
+  if [[ -n "${VAST_OPEN_TOKEN}" ]]; then
+    # Arriving at "/" with a valid Vast token: set the auth cookie and go
+    # straight to the SimpleTuner trainer page (no token in the redirect, so
+    # no loop - the cookie authorises the next request).
+    echo "    @token_root {"
+    echo "        query token=${VAST_OPEN_TOKEN}"
+    echo "        path /"
+    echo "    }"
+    echo "    handle @token_root {"
+    # '+Set-Cookie' appends so upstream (SimpleTuner) cookies are not overwritten
+    echo "        header +Set-Cookie \"${AUTH_COOKIE}=${VAST_OPEN_TOKEN}; Path=/; Max-Age=604800; HttpOnly; SameSite=lax\""
+    echo "        redir * /web/trainer 302"
+    echo "    }"
+    echo "    # Any other URL carrying a valid ?token= (e.g. a deep link) -"
+    echo "    # remember the session and strip the token before proxying."
+    echo "    @token_query {"
+    echo "        query token=${VAST_OPEN_TOKEN}"
+    echo "    }"
+    echo "    handle @token_query {"
+    echo "        header +Set-Cookie \"${AUTH_COOKIE}=${VAST_OPEN_TOKEN}; Path=/; Max-Age=604800; HttpOnly; SameSite=lax\""
+    echo "        uri query -token"
+    echo "        reverse_proxy 127.0.0.1:8001"
+    echo "    }"
+    echo "    @token_cookie {"
+    echo "        header Cookie \"*${AUTH_COOKIE}=${VAST_OPEN_TOKEN}*\""
+    echo "    }"
+    echo "    handle @token_cookie {"
+    echo "        reverse_proxy 127.0.0.1:8001"
+    echo "    }"
+    echo "    @token_bearer {"
+    echo "        header Authorization \"Bearer ${VAST_OPEN_TOKEN}\""
+    echo "    }"
+    echo "    handle @token_bearer {"
+    echo "        reverse_proxy 127.0.0.1:8001"
+    echo "    }"
+    echo "    # --- Fallback: HTTP basic auth (kept for direct/SSH access) ---"
+    echo "    handle {"
+    echo "        basic_auth {"
+    echo "            ${WEB_USER} ${HASHED_PASSWORD}"
+    echo "        }"
+    echo "        reverse_proxy 127.0.0.1:8001"
+    echo "    }"
+  else
+    echo "    basic_auth {"
+    echo "        ${WEB_USER} ${HASHED_PASSWORD}"
+    echo "    }"
+    echo "    reverse_proxy 127.0.0.1:8001"
+  fi
+  echo "}"
+} > /etc/caddy/Caddyfile
 
-# Start Caddy in the background
-caddy start --config /etc/caddy/Caddyfile | tee -a "/var/log/portal/start.sh.log"
+if [[ -n "${VAST_OPEN_TOKEN}" ]]; then
+  echo "Vast Open token detected (${VAST_OPEN_TOKEN:0:8}...): enabling token-based auth" | tee -a "/var/log/portal/start.sh.log"
+else
+  echo "No Vast Open token found in environment - only basic auth is enabled (WEB_USER/WEB_PASSWORD)" | tee -a "/var/log/portal/start.sh.log"
+fi
+
+# Start Caddy in the background.
+# NB: do NOT pipe `caddy start` to tee -- the backgrounded daemon keeps the
+#     pipe open, so the shell would block forever waiting for EOF on it.
+#     Redirect to the log file instead.
+caddy start --config /etc/caddy/Caddyfile >> "/var/log/portal/start.sh.log" 2>&1
 
 nvidia-smi | tee -a "/var/log/portal/start.sh.log"
 echo "Version: ${SIMPLETUNER_VERSION}" | tee -a "/var/log/portal/start.sh.log"
