@@ -76,7 +76,7 @@ HASHED_PASSWORD=$(caddy hash-password --plaintext "$WEB_PASSWORD")
 # Create dynamic Caddyfile
 cat <<EOF > /etc/caddy/Caddyfile
 :8000 {
-    basic_auth {
+    basicauth {
         $WEB_USER $HASHED_PASSWORD
     }
     reverse_proxy 127.0.0.1:8001
