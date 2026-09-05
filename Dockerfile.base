@@ -58,8 +58,6 @@ RUN apt-get update -y \
   && curl https://rclone.org/install.sh | bash \
   && git config --global credential.helper store \
   && git lfs install \
-  && curl -1sLf 'https://dl.cloudsmith.io/public/caddy/stable/gpg.key' | gpg --dearmor -o /usr/share/keyrings/caddy-stable-archive-keyring.gpg \
-  && curl -1sLf 'https://dl.cloudsmith.io/public/caddy/stable/debian.deb.txt' | tee /etc/apt/sources.list.d/caddy-stable.list \
   && apt-get install -y --no-install-recommends \
       caddy \
   && rm -rf /var/lib/apt/lists/* \
@@ -70,6 +68,7 @@ RUN apt-get update -y \
   && echo 'source /etc/rp_environment' >> ~/.bashrc \
   && echo 'echo ""' >> ~/.bashrc \
   && echo 'echo "------------------------"' >> ~/.bashrc \
+  && echo 'echo "Live log of onstart (vast.ai): /var/log/onstart.log"' >> ~/.bashrc \
   && echo 'echo "Live log of start.sh: /var/log/portal/start.sh.log"' >> ~/.bashrc \
   && echo 'echo "Live log of preparation.sh: /var/log/portal/preparation.sh.log"' >> ~/.bashrc \
   && echo 'echo "Live log of SimpleTuner: /var/log/portal/simpletuner.log"' >> ~/.bashrc \
