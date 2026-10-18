@@ -41,6 +41,7 @@ echo "SimpleTuner version: ${SIMPLETUNER_VERSION}" | tee -a "/var/log/portal/sim
 echo "SimpleTuner git rev: ${SIMPLETUNER_GIT_REV}" | tee -a "/var/log/portal/simpletuner.log"
 echo "SimpleTuner git rev short: ${SIMPLETUNER_GIT_REV_SHORT}" | tee -a "/var/log/portal/simpletuner.log"
 echo "GPUs:" | tee -a "/var/log/portal/simpletuner.log"
+nvidia-smi | tee -a "/var/log/portal/simpletuner.log"
 nvidia-smi --list-gpus | tee -a "/var/log/portal/simpletuner.log"
 echo "Start timestamp: ${START_TIMESTAMP}" | tee -a "/var/log/portal/simpletuner.log"
 echo "Training name: '${TRAINING_NAME}'" | tee -a "/var/log/portal/simpletuner.log"
@@ -348,6 +349,9 @@ if [[ -v TRAINING_NAME && -e /workspace/simpletuner/config/$TRAINING_NAME/prepar
   source "/workspace/simpletuner/config/${TRAINING_NAME}/preparation.sh" | tee -a "/var/log/portal/preparation.sh.log"
 fi
 
+# see: https://github.com/bghira/SimpleTuner/pull/3259
+export LYCORIS_KERNEL_BACKEND=torch
+
 rm -f /var/log/portal/simpletuner.log
 rm -rf /workspace/simpletuner/config/cloud
 source ${VENV_PATH}/bin/activate
@@ -364,9 +368,9 @@ if [[ -v DIRECT_TRAINING ]]; then
     echo "" | tee -a "/var/log/portal/start.sh.log"
     cd "/workspace/simpletuner/config/${TRAINING_NAME}/"
     export GIT_TRAINING_TAG="${TRAINING_NAME}_${START_TIME}"
-    export HUB_MODEL_ID=$(grep hub_model_id config.json | sed 's/.*"\(.*\)".*/\1/')
-    export TRACKER_PROJECT_NAME=$(grep tracker_project_name config.json | sed 's/.*"\(.*\)".*/\1/')
-    export TRACKER_RUN_NAME=$(grep tracker_run_name config.json | sed 's/.*"\(.*\)".*/\1/')
+    export HUB_MODEL_ID=$(grep \"hub_model_id\" config.json | sed 's/.*"\(.*\)".*/\1/')
+    export TRACKER_PROJECT_NAME=$(grep \"tracker_project_name\" config.json | sed 's/.*"\(.*\)".*/\1/')
+    export TRACKER_RUN_NAME=$(grep \"tracker_run_name\" config.json | sed 's/.*"\(.*\)".*/\1/')
     if [[ "${GIT_NO_TAG:-}" != "true" ]]; then
       git tag "${GIT_TRAINING_TAG}" \
         -m "Training of '${TRAINING_NAME}' started at ${START_TIMESTAMP}" \
