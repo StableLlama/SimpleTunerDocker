@@ -349,9 +349,6 @@ if [[ -v TRAINING_NAME && -e /workspace/simpletuner/config/$TRAINING_NAME/prepar
   source "/workspace/simpletuner/config/${TRAINING_NAME}/preparation.sh" | tee -a "/var/log/portal/preparation.sh.log"
 fi
 
-# see: https://github.com/bghira/SimpleTuner/pull/3259
-export LYCORIS_KERNEL_BACKEND=torch
-
 rm -f /var/log/portal/simpletuner.log
 rm -rf /workspace/simpletuner/config/cloud
 source ${VENV_PATH}/bin/activate

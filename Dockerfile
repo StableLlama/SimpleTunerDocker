@@ -57,8 +57,8 @@ RUN echo "Installing SimpleTuner from Git" \
       EXTRA_INDEX_URL=""; \
     fi \
  && pip install --no-cache-dir -e .$EXTRA_OPTIONS $EXTRA_INDEX_URL \
- # && echo "temp: limit LyCROIS to < 4.0.0 due to torch.compile not working in combination with ST" \
- # && pip install --no-build-isolation --no-cache-dir "lycoris-lora<4" \
+ && echo "temp: https://github.com/bghira/SimpleTuner/blob/main/documentation/quickstart/KREA2.md#lycoris-version" \
+ && pip install --upgrade "lycoris-lora>=4.1.3" \
  && echo "Installing CuTeDSL operators dependencies" \
  && pip install --no-build-isolation --no-cache-dir nvidia-cutlass-dsl apache-tvm-ffi \
  && echo "Installing SageAttention" \
